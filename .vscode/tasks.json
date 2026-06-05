@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "boot-emulator",
+      "detail": "Sobe o emulador Android (Pixel_9_Pro) só se nenhum estiver conectado.",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "if (-not (adb devices | Select-String 'emulator-')) { Start-Process \"$env:LOCALAPPDATA\\Android\\Sdk\\emulator\\emulator.exe\" -ArgumentList '-avd','Pixel_9_Pro' }"
+      ],
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared" }
+    },
+    {
+      "label": "expo-android",
+      "detail": "Inicia o Metro e abre o app no emulador Android (Expo Go).",
+      "type": "shell",
+      "command": "npx expo start --android",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    }
+  ]
+}

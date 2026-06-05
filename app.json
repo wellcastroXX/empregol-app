@@ -4,18 +4,20 @@
     "slug": "empregol-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon-empregol.png",
     "scheme": "empregolapp",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.empregolapp",
+      "usesAppleSignIn": true,
+      "googleServicesFile": "./firebase/GoogleService-Info.plist"
     },
     "android": {
+      "package": "com.empregolapp",
+      "googleServicesFile": "./firebase/google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#1F7A3D",
+        "foregroundImage": "./assets/images/icon-empregol-fg.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -28,13 +30,14 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#141413",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

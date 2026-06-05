@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "▶ Empregol · Android (emulador)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx expo start --android",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "boot-emulator"
+    },
+    {
+      "name": "▶ Empregol · Android (limpar cache)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx expo start --android --clear",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "boot-emulator"
+    },
+    {
+      "name": "▶ Empregol · Web",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx expo start --web",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

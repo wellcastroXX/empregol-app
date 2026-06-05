@@ -1,56 +1,100 @@
-# Welcome to your Expo app 👋
+# Empregol — App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Marketplace de futebol que conecta **Atletas** a **Contratantes** (Agente / Clube).
+Expo SDK 56 (React Native 0.85, React 19) · expo-router · arquitetura feature-based.
 
-## Get started
+## Pré-requisitos
 
-1. Install dependencies
+- **Node 22+** e npm
+- **JDK 17** (Temurin/Eclipse Adoptium) — exigido pelo RN 0.85
+- **Android SDK** (com `ANDROID_HOME` configurado) + build-tools/platform 36
+- Dependências: `npm install`
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Rodar em desenvolvimento
 
 ```bash
-npm run reset-project
+npx expo start            # abre o Metro; tecle "a" para Android, "i" para iOS
+npx expo run:android      # build de dev + instala no emulador/dispositivo conectado
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+> O app lê variáveis `EXPO_PUBLIC_*` do `.env` (ex.: `EXPO_PUBLIC_API_URL`).
 
-### Other setup steps
+---
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Gerar o APK (Android)
 
-## Learn more
+O projeto usa **CNG** (Continuous Native Generation): a pasta `android/` não é versionada,
+é gerada pelo `prebuild`. Para produzir um **APK release standalone** (bundle JS embutido,
+não precisa de Metro rodando):
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+# 1. Gera a pasta nativa android/ a partir do app.json (sobrescreve a existente)
+npx expo prebuild -p android --clean
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# 2. Compila o APK release (assinado com a debug keystore do template Expo)
+cd android
+./gradlew assembleRelease --no-daemon      # Windows PowerShell: .\gradlew.bat assembleRelease --no-daemon
+cd ..
+```
 
-## Join the community
+O APK fica em:
 
-Join our community of developers creating universal apps.
+```
+android/app/build/outputs/apk/release/app-release.apk
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+> A primeira execução baixa o Gradle distribution + dependências (~10–15 min).
+> As seguintes são bem mais rápidas (cache do Gradle).
+
+### Instalar no dispositivo
+
+```bash
+# Por cabo (Depuração USB ligada):
+adb install -r android/app/build/outputs/apk/release/app-release.apk
+
+# Ou: transfira o .apk para o celular e abra (permita "fontes desconhecidas").
+```
+
+### APK de debug (para depurar com Metro)
+
+```bash
+cd android && ./gradlew assembleDebug --no-daemon
+# saída: android/app/build/outputs/apk/debug/app-debug.apk  (requer Metro rodando)
+```
+
+### AAB para a Play Store
+
+O APK acima é assinado com a **debug keystore** — serve para testes, **não** para publicar.
+Para a loja, gere uma **keystore de release** própria e configure a assinatura
+(`android/app/build.gradle` → `signingConfigs.release`), depois:
+
+```bash
+cd android && ./gradlew bundleRelease --no-daemon
+# saída: android/app/build/outputs/bundle/release/app-release.aab
+```
+
+Alternativa gerenciada (recomendada para distribuição): **EAS Build**
+(`eas build -p android --profile preview` gera APK; `--profile production` gera AAB).
+
+---
+
+## Estrutura
+
+```
+src/
+  app/            # rotas (expo-router) — finas, delegam para features/
+  features/       # telas por domínio (auth, home, messages, ...)
+  components/ui/  # design system (Button, Card, Text, Logo, ...)
+  theme/          # tokens (cores, tipografia, espaçamento)
+  services/       # camada de API (client, auth, dashboard, athletes, ...)
+  context/        # AuthContext
+```
+
+A API real está em `empregol-api` (Express + Prisma + JWT). Base URL via `EXPO_PUBLIC_API_URL`.
+
+## Verificação
+
+```bash
+npx tsc --noEmit          # checagem de tipos
+npx expo lint             # ESLint
+```

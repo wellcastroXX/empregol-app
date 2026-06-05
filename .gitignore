@@ -41,3 +41,14 @@ example
 # generated native folders
 /ios
 /android
+
+# build artifacts
+*.apk
+*.aab
+
+# Firebase config (contêm chaves do projeto)
+firebase/google-services.json
+firebase/GoogleService-Info.plist
+# Service account = SEGREDO de admin — pertence ao BACKEND, nunca ao app cliente
+firebase/*adminsdk*.json
+*-firebase-adminsdk-*.json

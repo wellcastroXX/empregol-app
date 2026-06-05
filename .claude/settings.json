@@ -1,4 +1,46 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(printf '\\\\n# Login social \\(Firebase Admin\\)\\\\nFIREBASE_SERVICE_ACCOUNT_PATH=src/config/empregol-4c702-firebase-adminsdk-fbsvc-1b4c5acb08.json\\\\n')",
+      "Bash(node -e \"const admin=require\\('firebase-admin'\\);const sa=require\\('./src/config/empregol-4c702-firebase-adminsdk-fbsvc-1b4c5acb08.json'\\);admin.initializeApp\\({credential:admin.credential.cert\\(sa\\)}\\);console.log\\('firebase-admin OK · project:', sa.project_id\\);\")",
+      "Bash(node -e ' *)",
+      "Bash(rsvg-convert -w 1024 -h 1024 assets/images/_icon-green.svg -o assets/images/icon-empregol.png)",
+      "Bash(rsvg-convert -w 1024 -h 1024 assets/images/_icon-fg.svg -o assets/images/icon-empregol-fg.png)",
+      "Bash(rm assets/images/_icon-green.svg assets/images/_icon-fg.svg)",
+      "Read(//tmp/**)",
+      "Bash(adb exec-out *)",
+      "PowerShell($out = @{}; $out.node = \\(node -v\\); $out.npx = \\(npx -v\\); try { $out.eas = \\(npx eas --version\\) } catch { $out.eas = \"n/a\" }; $out.java = \\(try { \\(java -version\\) } catch { \"n/a\" }\\); $out.ANDROID_HOME = $env:ANDROID_HOME; $out.ANDROID_SDK_ROOT = $env:ANDROID_SDK_ROOT; $out | ConvertTo-Json)",
+      "PowerShell(Write-Output \"=== java ===\"; \\(Get-Command java -ErrorAction SilentlyContinue\\).Source; try { java -version } catch {}; Write-Output \"=== JAVA_HOME ===\"; $env:JAVA_HOME; Write-Output \"=== SDK dirs ===\"; Get-ChildItem \"$env:ANDROID_HOME\" -ErrorAction SilentlyContinue | Select-Object Name; Write-Output \"=== build-tools ===\"; Get-ChildItem \"$env:ANDROID_HOME\\\\build-tools\" -ErrorAction SilentlyContinue | Select-Object Name; Write-Output \"=== platforms ===\"; Get-ChildItem \"$env:ANDROID_HOME\\\\platforms\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "PowerShell(npx expo prebuild -p android --clean)",
+      "PowerShell(& \"$PWD\\\\android\\\\gradlew.bat\" assembleRelease -p \"$PWD\\\\android\" --no-daemon)",
+      "Bash(wc -l)",
+      "Bash(echo 'linhas: __CMDSUB_OUTPUT__')",
+      "Bash(echo \"--- últimas tasks app: ---\")",
+      "Bash(grep -E 'Task :app:' C:/Users/wellc/AppData/Local/Temp/claude/d--WORK-S7-App-Empregol-empregol-app/2d41ba9e-312a-4788-9b4e-dffa261db8e5/tasks/bhfi04aj9.output)",
+      "Bash(xargs -I{} sh -c 'awk \"/model User /,/^}/\" {}')",
+      "Bash(xargs -I{} grep -A8 \"enum UserStatus\" {})",
+      "Bash(xargs -I{} grep -A8 \"enum AccountStatus\" {})",
+      "Bash(xargs -I{} sh -c 'awk \"/model Athlete /,/^}/\" {}')",
+      "Bash(xargs -I{} sh -c 'awk \"/model Message /,/^}/\" {}')",
+      "Bash(xargs -I{} sh -c 'awk \"/model Conversation /,/^}/\" {}')",
+      "Bash(sed -n '/findOrCreate/,/^  }/p' src/modules/conversation/conversation.repository.ts)",
+      "Bash(sed -n '/export const colors/,/};/p' src/theme/colors.ts)",
+      "Bash(sed -n '1,40p' src/components/ui/Avatar.tsx)",
+      "PowerShell(git -C \"D:/WORK/S7/App/Empregol/empregol-api\" status --short --branch)",
+      "PowerShell(git -C \"D:/WORK/S7/App/Empregol/empregol-api\" log --oneline -8)",
+      "PowerShell(git -C \"d:/WORK/S7/App/Empregol/empregol-app\" status --short)",
+      "PowerShell(git -C \"d:/WORK/S7/App/Empregol/empregol-app\" status --short -- src/features/messages src/services/api/conversations-api.ts \"src/app/\\(app\\)/conversas\" \"src/app/\\(app\\)/_layout.tsx\" src/features/athlete/screens/AthleteProfileScreen.tsx)",
+      "Bash(sed -n '/toPublicAthleteProfile/,/^}/p' src/services/api/mappers.ts)",
+      "Bash(sed -n '/ApiPublicAthlete/,/}/p' src/services/api/mappers.ts)",
+      "Bash(grep -nE \"profileService|ProfileService\" src/services/index.ts)",
+      "Bash(ls -la --time-style=+%H:%M src/features/athlete/screens/DiscoverScreen.tsx src/services/profile-service.ts src/services/api/athletes-api.ts src/services/api/mappers.ts empregol-v1.0.0.apk android/app/build/outputs/apk/release/app-release.apk)"
+    ],
+    "additionalDirectories": [
+      "D:\\WORK\\S7\\App\\Empregol\\empregol-api\\src\\modules\\auth\\social",
+      "D:\\WORK\\S7\\App\\Empregol\\empregol-api\\src",
+      "D:\\WORK\\S7\\App\\Empregol\\empregol-api"
+    ]
+  },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   }
