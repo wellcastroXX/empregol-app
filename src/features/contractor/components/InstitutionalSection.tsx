@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Divider, SectionHeader, Text } from '@/components/ui';
-import { colors, spacing } from '@/theme';
+import { Divider, Text } from '@/components/ui';
+import { palette, spacing } from '@/theme';
 import type { ContractorProfile } from '@/types';
 
 /** Institutional area — document, razão social, social, extra info. */
@@ -17,16 +17,18 @@ export function InstitutionalSection({ contractor }: { contractor: ContractorPro
 
   return (
     <View style={styles.wrapper}>
-      <SectionHeader eyebrow="I N S T I T U C I O N A L" />
+      <Text variant="eyebrow" color={palette.cinzaOnDark}>
+        I N S T I T U C I O N A L
+      </Text>
       <View>
         {rows.map((row, index) => (
           <View key={row.label}>
-            {index > 0 && <Divider />}
+            {index > 0 && <Divider color={palette.ruleOnDark} />}
             <View style={styles.row}>
-              <Text variant="sm" color={colors.fgMuted}>
+              <Text variant="sm" color={palette.cinzaOnDark}>
                 {row.label}
               </Text>
-              <Text variant="smMedium" color={colors.fg} style={styles.value}>
+              <Text variant="smMedium" color={palette.giz} style={styles.value}>
                 {row.value}
               </Text>
             </View>

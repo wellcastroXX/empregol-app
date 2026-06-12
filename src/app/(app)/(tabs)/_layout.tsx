@@ -1,19 +1,23 @@
 import { Feather } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
+import { useAuth } from '@/context/AuthContext';
 import { colors, fontFamily, palette } from '@/theme';
 
 /** Bottom tabs for the logged-in area: FEED · EXPLORAR · CONVERSAS · PERFIL. */
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const dark = user?.role === 'contractor';
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: palette.gramado,
-        tabBarInactiveTintColor: colors.fgMuted,
+        tabBarInactiveTintColor: dark ? palette.cinzaOnDark : colors.fgMuted,
         tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.rule,
+          backgroundColor: dark ? palette.tinta : colors.bg,
+          borderTopColor: dark ? palette.ruleOnDark : colors.rule,
         },
         tabBarLabelStyle: { fontFamily: fontFamily.monoMedium, fontSize: 10, letterSpacing: 1.4 },
         tabBarItemStyle: { paddingTop: 4 },
@@ -43,7 +47,9 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'PERFIL',
-          tabBarIcon: ({ color, size }) => <Feather name="user" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Feather name={dark ? 'shield' : 'user'} color={color} size={size} />
+          ),
         }}
       />
       {/* Reachable from the profile (gear), not shown in the bar. */}

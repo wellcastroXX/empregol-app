@@ -33,7 +33,15 @@
       "Bash(sed -n '/toPublicAthleteProfile/,/^}/p' src/services/api/mappers.ts)",
       "Bash(sed -n '/ApiPublicAthlete/,/}/p' src/services/api/mappers.ts)",
       "Bash(grep -nE \"profileService|ProfileService\" src/services/index.ts)",
-      "Bash(ls -la --time-style=+%H:%M src/features/athlete/screens/DiscoverScreen.tsx src/services/profile-service.ts src/services/api/athletes-api.ts src/services/api/mappers.ts empregol-v1.0.0.apk android/app/build/outputs/apk/release/app-release.apk)"
+      "Bash(ls -la --time-style=+%H:%M src/features/athlete/screens/DiscoverScreen.tsx src/services/profile-service.ts src/services/api/athletes-api.ts src/services/api/mappers.ts empregol-v1.0.0.apk android/app/build/outputs/apk/release/app-release.apk)",
+      "Bash(sed -n '/export const spacing/,/}/p' spacing.ts)",
+      "Bash(sed -n '/export const radii/,/}/p' radii.ts)",
+      "Bash(cd \"d:/WORK/S7/App/Empregol/empregol-app/src/components/ui\"; echo \"=== index exports ===\"; cat index.ts 2>/dev/null; echo \"=== files ===\"; ls; echo \"=== Text variants ===\"; grep -nE \"^\\\\s*[a-zA-Z0-9]+:\" ../../theme/typography.ts | sed -n '1,60p' | grep -A0 -E \"displayLg|displayMd|displaySm|h1|h2|h3|body|sm|smMedium|xs|eyebrow|monoLabel|tag\")",
+      "Read(//d/WORK/S7/App/theme/**)",
+      "Bash(xargs wc -l)",
+      "Bash(sed -n '1,60p' ContractorHeader.tsx)",
+      "Bash(sed -n '1,40p' InstitutionalSection.tsx)",
+      "PowerShell($apk = \"d:\\\\WORK\\\\S7\\\\App\\\\Empregol\\\\empregol-app\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\release\\\\app-release.apk\"; if \\(Test-Path $apk\\) { $f = Get-Item $apk; Write-Output \\(\"OK  {0:N1} MB  {1}\" -f \\($f.Length/1MB\\), $f.LastWriteTime\\) } else { Write-Output \"APK NAO ENCONTRADO\" })"
     ],
     "additionalDirectories": [
       "D:\\WORK\\S7\\App\\Empregol\\empregol-api\\src\\modules\\auth\\social",

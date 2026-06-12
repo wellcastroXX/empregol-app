@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { fontFamily, fontSize, palette, radii, spacing } from '@/theme';
 
-export type TagVariant = 'default' | 'live' | 'ink' | 'ghost' | 'ghostLight' | 'empregado' | 'warn';
+export type TagVariant = 'default' | 'live' | 'ink' | 'inkElev' | 'ghost' | 'ghostLight' | 'empregado' | 'warn';
 
 export type TagProps = {
   label: string;
@@ -15,6 +15,7 @@ const VARIANTS: Record<TagVariant, { bg: string; fg: string; border?: string }> 
   default: { bg: palette.osso, fg: palette.tinta },
   live: { bg: palette.gramado, fg: palette.giz },
   ink: { bg: palette.tinta, fg: palette.giz },
+  inkElev: { bg: palette.tintaElev, fg: palette.giz, border: palette.ruleOnDark },
   ghost: { bg: 'transparent', fg: palette.tinta, border: palette.tinta },
   ghostLight: { bg: 'transparent', fg: palette.giz, border: palette.giz },
   empregado: { bg: palette.empregado, fg: palette.giz },

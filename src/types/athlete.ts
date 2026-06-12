@@ -19,6 +19,9 @@ export type Position =
 
 export type DominantFoot = 'direito' | 'esquerdo' | 'ambidestro';
 
+/** Gender — used for filtering / category browsing in the vitrine. */
+export type Genero = 'masculino' | 'feminino';
+
 /** Competitive level. */
 export type PlayerLevel = 'profissional' | 'amador' | 'base';
 
@@ -59,6 +62,7 @@ export interface AthleteProfile extends BaseUser {
   dataNascimento: string; // ISO date
   idade: number;
   naturalidade: string;
+  genero: Genero;
   posicao: Position;
   peDominante: DominantFoot;
   alturaCm: number;

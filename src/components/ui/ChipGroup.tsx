@@ -12,6 +12,8 @@ export type ChipGroupProps<T extends string> = {
   size?: ChipSize;
   /** Chips grow to fill each row (equal width), wrapping to a grid. */
   grow?: boolean;
+  /** Dark canvas variant (contractor env). */
+  dark?: boolean;
 };
 
 /** Single-select row of chips (wraps). Mirrors the brand's ChipRow. */
@@ -21,6 +23,7 @@ export function ChipGroup<T extends string>({
   onChange,
   size,
   grow,
+  dark,
 }: ChipGroupProps<T>) {
   return (
     <View style={styles.row}>
@@ -29,6 +32,7 @@ export function ChipGroup<T extends string>({
           key={opt.value}
           label={opt.label}
           size={size}
+          dark={dark}
           selected={value === opt.value}
           onPress={() => onChange(opt.value)}
           style={grow ? styles.grow : undefined}

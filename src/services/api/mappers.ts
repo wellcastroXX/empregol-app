@@ -6,6 +6,7 @@ import type {
   ContractorKind,
   ContractorProfile,
   DominantFoot,
+  Genero,
   PlayerLevel,
   Position,
   SignUpPayload,
@@ -33,6 +34,9 @@ const LEVEL_FROM_API: Record<string, PlayerLevel> = {
   YOUTH: 'base',
 };
 
+const GENDER_TO_API: Record<Genero, string> = { masculino: 'MALE', feminino: 'FEMALE' };
+const GENDER_FROM_API: Record<string, Genero> = { MALE: 'masculino', FEMALE: 'feminino' };
+
 const AVAILABILITY_FROM_API: Record<string, AvailabilityStatus> = { FREE: 'livre', EMPLOYED: 'empregado' };
 const AGENCY_FROM_API: Record<string, AgencyStatus> = { REPRESENTED: 'agenciado', UNREPRESENTED: 'nao_agenciado' };
 const CONTRACTOR_TO_API: Record<ContractorKind, string> = { agent: 'AGENT', club: 'CLUB' };
@@ -55,6 +59,7 @@ export function toAthleteRegisterBody(p: Extract<SignUpPayload, { role: 'athlete
     birthDate: p.dataNascimento,
     phone: unmask(p.telefone),
     naturalidade: p.naturalidade,
+    gender: GENDER_TO_API[p.genero],
     position: short,
     dominantFoot: FOOT_TO_API[p.peDominante],
     height: p.alturaCm,
@@ -96,6 +101,7 @@ interface ApiAthlete {
   cpf: string;
   birthDate: string;
   naturalidade: string;
+  gender?: string | null;
   phone: string;
   position: string;
   dominantFoot: string;
@@ -156,6 +162,7 @@ function toAthleteProfile(user: ApiUser, a: ApiAthlete): AthleteProfile {
     dataNascimento: a.birthDate,
     idade: ageFromBirthdate(a.birthDate),
     naturalidade: a.naturalidade,
+    genero: GENDER_FROM_API[a.gender ?? ''] ?? 'masculino',
     posicao: positionFromApi(a.position),
     peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
     alturaCm: a.height,
@@ -238,7 +245,8 @@ export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
     cpf: '',
     dataNascimento: a.birthDate ?? '',
     idade: a.age ?? (a.birthDate ? ageFromBirthdate(a.birthDate) : 0),
-    naturalidade: '',
+    naturalidade: a.naturalidade ?? '',
+    genero: GENDER_FROM_API[a.gender ?? ''] ?? 'masculino',
     posicao: positionFromApi(a.position),
     peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
     alturaCm: a.height,

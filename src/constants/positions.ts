@@ -3,6 +3,7 @@ import type {
   AvailabilityStatus,
   ContractorKind,
   DominantFoot,
+  Genero,
   PlayerLevel,
   Position,
 } from '@/types';
@@ -36,6 +37,11 @@ export const DOMINANT_FEET: Option<DominantFoot>[] = [
   { value: 'direito', label: 'Direito' },
   { value: 'esquerdo', label: 'Esquerdo' },
   { value: 'ambidestro', label: 'Ambidestro' },
+];
+
+export const GENDERS: Option<Genero>[] = [
+  { value: 'masculino', label: 'Masculino' },
+  { value: 'feminino', label: 'Feminino' },
 ];
 
 export const PLAYER_LEVELS: Option<PlayerLevel>[] = [

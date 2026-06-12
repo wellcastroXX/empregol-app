@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Banner, Button, ChipGroup, Text, TextField, type ChipOption } from '@/components/ui';
-import { AGENCY, DOMINANT_FEET, PLAYER_LEVELS, POSITIONS } from '@/constants/positions';
+import { AGENCY, DOMINANT_FEET, GENDERS, PLAYER_LEVELS, POSITIONS } from '@/constants/positions';
 import { useAuth } from '@/context/AuthContext';
 import { RegisterHeader } from '@/features/auth/components/RegisterHeader';
 import { AuthError } from '@/services';
@@ -13,6 +13,7 @@ import type {
   AgencyStatus,
   AvailabilityStatus,
   DominantFoot,
+  Genero,
   PlayerLevel,
   Position,
 } from '@/types';
@@ -38,6 +39,7 @@ interface FormState {
   email: string;
   senha: string;
   telefone: string;
+  genero?: Genero;
   posicao?: Position;
   peDominante?: DominantFoot;
   alturaM: string; // meters, e.g. "1.84"
@@ -68,6 +70,10 @@ const FOOT_CHIPS: ChipOption<DominantFoot>[] = DOMINANT_FEET.map((f) => ({
 const LEVEL_CHIPS: ChipOption<PlayerLevel>[] = PLAYER_LEVELS.map((l) => ({
   value: l.value,
   label: l.label.toUpperCase(),
+}));
+const GENERO_CHIPS: ChipOption<Genero>[] = GENDERS.map((g) => ({
+  value: g.value,
+  label: g.label.toUpperCase(),
 }));
 const AGENCY_CHIPS: ChipOption<AgencyStatus>[] = AGENCY.map((a) => ({
   value: a.value,
@@ -133,6 +139,7 @@ export function AthleteRegisterScreen() {
       if (!isValidPhone(form.telefone)) return 'Telefone inválido.';
     }
     if (step === 1) {
+      if (!form.genero) return 'Selecione o gênero.';
       if (!form.posicao) return 'Selecione a posição.';
       if (!form.peDominante) return 'Selecione o pé dominante.';
       if (!parseFloat(form.alturaM.replace(',', '.'))) return 'Informe a altura.';
@@ -182,6 +189,7 @@ export function AthleteRegisterScreen() {
         dataNascimento: iso,
         idade: ageFromBirthdate(iso),
         naturalidade: form.naturalidade.trim(),
+        genero: form.genero!,
         posicao: form.posicao!,
         peDominante: form.peDominante!,
         alturaCm,
@@ -251,6 +259,9 @@ export function AthleteRegisterScreen() {
 
         {step === 1 && (
           <>
+            <Field label="GÊNERO">
+              <ChipGroup options={GENERO_CHIPS} value={form.genero} onChange={(v) => set('genero', v)} size="lg" />
+            </Field>
             <Field label="POSIÇÃO">
               <ChipGroup options={POSITION_CHIPS} value={form.posicao} onChange={(v) => set('posicao', v)} size="lg" grow />
             </Field>

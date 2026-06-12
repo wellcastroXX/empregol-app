@@ -14,6 +14,8 @@ export type ScreenProps = ScrollViewProps & {
   /** Horizontal+vertical content padding (default 16). */
   padded?: boolean;
   edges?: Edge[];
+  /** Override the safe-area background (e.g. dark canvas for the contractor env). */
+  surface?: string;
 };
 
 /**
@@ -24,6 +26,7 @@ export function Screen({
   scroll = true,
   padded = true,
   edges = ['top', 'left', 'right'],
+  surface,
   children,
   contentContainerStyle,
   style,
@@ -32,7 +35,7 @@ export function Screen({
   const content = padded ? styles.padded : undefined;
 
   return (
-    <SafeAreaView style={styles.safe} edges={edges}>
+    <SafeAreaView style={[styles.safe, surface != null && { backgroundColor: surface }]} edges={edges}>
       {scroll ? (
         <ScrollView
           style={styles.flex}

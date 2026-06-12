@@ -7,8 +7,9 @@ import { Avatar, Button, Logo, Tag, Text } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { dashboardApi, type AthleteDashboard } from '@/services/api/dashboard-api';
 import { colors, fontFamily, palette, radii, spacing } from '@/theme';
-import type { AthleteProfile } from '@/types';
+import type { AthleteProfile, ContractorProfile } from '@/types';
 import { timeAgoShort } from '@/utils';
+import { ContractorHome } from './ContractorHome';
 
 const CONTRACTOR_LABEL: Record<'AGENT' | 'CLUB', string> = { AGENT: 'AGENTE', CLUB: 'CLUBE' };
 
@@ -24,11 +25,13 @@ export function HomeScreen() {
   const { user } = useAuth();
   if (!user) return null;
 
-  const isAthlete = user.role === 'athlete';
-  const jersey =
-    isAthlete && (user as AthleteProfile).numero != null
-      ? String((user as AthleteProfile).numero).padStart(2, '0')
-      : null;
+  // Contractor — full dark home (own screen shell).
+  if (user.role === 'contractor') {
+    return <ContractorHome contractor={user as ContractorProfile} />;
+  }
+
+  const athlete = user as AthleteProfile;
+  const jersey = athlete.numero != null ? String(athlete.numero).padStart(2, '0') : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -49,11 +52,7 @@ export function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {isAthlete ? (
-          <AthleteHome athlete={user as AthleteProfile} onEdit={() => router.push('/profile')} />
-        ) : (
-          <ContractorHome onOpenVitrine={() => router.push('/discover')} />
-        )}
+        <AthleteHome athlete={athlete} onEdit={() => router.push('/profile')} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -215,30 +214,6 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
         </View>
         <Button label="SUBIR" chevron variant="ink" size="sm" onPress={onEdit} />
       </View>
-    </>
-  );
-}
-
-/* ───────────────────────── Contractor view ───────────────────────── */
-
-function ContractorHome({ onOpenVitrine }: { onOpenVitrine: () => void }) {
-  return (
-    <>
-      <View style={styles.greetBlock}>
-        <Text variant="eyebrow" color={colors.fgMuted}>
-          {dateEyebrow()}
-        </Text>
-        <Text variant="displayMd" color={colors.fg}>
-          Talento livre{'\n'}te esperando
-          <Text variant="displayMd" color={colors.accent}>
-            ..
-          </Text>
-        </Text>
-        <Text variant="sm" color={colors.fgMuted}>
-          Filtre atletas livres, monte sua shortlist e convide para teste.
-        </Text>
-      </View>
-      <Button label="Abrir a vitrine" chevron fullWidth onPress={onOpenVitrine} />
     </>
   );
 }

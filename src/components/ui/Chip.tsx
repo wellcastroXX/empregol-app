@@ -9,23 +9,34 @@ export type ChipProps = {
   label: string;
   selected?: boolean;
   size?: ChipSize;
+  /** Dark canvas variant (contractor env): light fill when active, cream outline when not. */
+  dark?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 };
 
 /** Filter chip — mono ALL CAPS. Active = ink fill; inactive = osso outline. */
-export function Chip({ label, selected, size = 'sm', onPress, style }: ChipProps) {
+export function Chip({ label, selected, size = 'sm', dark, onPress, style }: ChipProps) {
+  const variant = dark
+    ? selected
+      ? styles.selectedDark
+      : styles.unselectedDark
+    : selected
+      ? styles.selected
+      : styles.unselected;
+  const fg = dark
+    ? selected
+      ? palette.tinta
+      : palette.giz
+    : selected
+      ? palette.giz
+      : palette.tinta;
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={[
-        styles.chip,
-        size === 'lg' && styles.lg,
-        selected ? styles.selected : styles.unselected,
-        style,
-      ]}>
-      <Text style={styles.label} numberOfLines={1} color={selected ? palette.giz : palette.tinta}>
+      style={[styles.chip, size === 'lg' && styles.lg, variant, style]}>
+      <Text style={styles.label} numberOfLines={1} color={fg}>
         {label}
       </Text>
     </Pressable>
@@ -52,6 +63,14 @@ const styles = StyleSheet.create({
   unselected: {
     backgroundColor: 'transparent',
     borderColor: colors.rule,
+  },
+  selectedDark: {
+    backgroundColor: palette.giz,
+    borderColor: palette.giz,
+  },
+  unselectedDark: {
+    backgroundColor: 'transparent',
+    borderColor: palette.cinzaOnDark,
   },
   label: {
     fontFamily: fontFamily.monoMedium,

@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, EmptyState, Tag, Text } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +15,7 @@ import type { AthleteProfile, DominantFoot } from '@/types';
 import {
   AthleteHero,
   AthleteStats,
+  OwnAthleteHeader,
   PersonalDataSection,
   SalaryCard,
   TrajetoriaSection,
@@ -42,6 +44,7 @@ export function AthleteProfileScreen({
   onSettings,
 }: AthleteProfileScreenProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
   const isContractor = user?.role === 'contractor';
   const [athlete, setAthlete] = useState<AthleteProfile | null>(provided ?? null);
@@ -94,7 +97,10 @@ export function AthleteProfileScreen({
     setChatLoading(true);
     try {
       const conv = await conversationsApi.open(athlete.id);
-      router.push({ pathname: '/conversas/[id]', params: { id: conv.id, name: athlete.nome } });
+      router.push({
+        pathname: '/conversas/[id]',
+        params: { id: conv.id, name: athlete.nome, subtitle: posLabel },
+      });
     } finally {
       setChatLoading(false);
     }
@@ -105,6 +111,35 @@ export function AthleteProfileScreen({
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Sair', style: 'destructive', onPress: () => signOut() },
     ]);
+  }
+
+  // ── Own profile: single dark editorial header + cream content ──
+  if (!scout) {
+    return (
+      <View style={styles.ownRoot}>
+        <StatusBar style="light" />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.ownScroll}>
+          <OwnAthleteHeader
+            athlete={athlete}
+            insetsTop={insets.top}
+            onUpdatePhoto={() => Alert.alert('Em breve', 'Atualização de foto disponível em breve.')}
+            onUpdateData={onSettings}
+            onShare={() => Share.share({ message: `Confira o perfil de ${athlete.nome} no Empregol.` })}
+          />
+
+          <View style={styles.ownBody}>
+            <AthleteStats athlete={athlete} />
+            {showPersonalData && <PersonalDataSection athlete={athlete} />}
+            <TrajetoriaSection entries={athlete.trajetoria} />
+            <VideoList videos={athlete.videos} />
+
+            <Pressable onPress={handleSignOut} style={styles.logoutRow} accessibilityRole="button">
+              <Text variant="sm" color={colors.statusEmpregado}>Sair da conta ›</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </View>
+    );
   }
 
   return (
@@ -201,6 +236,22 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  ownRoot: {
+    flex: 1,
+    backgroundColor: colors.fg, // dark, so top overscroll matches the header
+  },
+  ownScroll: {
+    flexGrow: 1,
+    paddingBottom: spacing['4xl'],
+    backgroundColor: colors.bg,
+  },
+  ownBody: {
+    flexGrow: 1,
+    backgroundColor: colors.bg,
+    paddingHorizontal: '5%',
+    paddingTop: spacing['2xl'],
+    gap: spacing['2xl'],
   },
   center: {
     flex: 1,
