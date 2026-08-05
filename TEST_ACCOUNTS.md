@@ -4,8 +4,8 @@
 
 Criadas diretamente no banco com `emailVerified = true`.
 
-| Papel | E-mail | Senha | Detalhes |
-|-------|--------|-------|----------|
+| Papel | E-mail                     | Senha           | Detalhes                                               |
+| ----- | -------------------------- | --------------- | ------------------------------------------------------ |
 | Clube | `saopaulo@empregolapp.com` | `SaoPaulo@2024` | São Paulo Futebol Clube S.A. · CNPJ 61.534.046/0001-34 |
 
 ### Como criar nova conta verificada no banco
@@ -28,13 +28,13 @@ docker compose exec db psql -U empregol empregol -c \
 > Funcionam apenas com a `MockAuthService` (removida). Mantidas como referência histórica.
 > **Senha:** `Empregol123`
 
-| Papel  | E-mail                        |
-|--------|-------------------------------|
-| Atleta | `rafael.andrade@email.com`    |
-| Atleta | `lucas.pereira@email.com`     |
-| Atleta | `gabriel.souza@email.com`     |
-| Agente | `marina@agenciafutebol.com`   |
-| Clube  | `contato@ecvitoria.com.br`    |
+| Papel  | E-mail                      |
+| ------ | --------------------------- |
+| Atleta | `rafael.andrade@email.com`  |
+| Atleta | `lucas.pereira@email.com`   |
+| Atleta | `gabriel.souza@email.com`   |
+| Agente | `marina@agenciafutebol.com` |
+| Clube  | `contato@ecvitoria.com.br`  |
 
 ## Notas
 
