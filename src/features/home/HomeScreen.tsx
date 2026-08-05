@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, Button, Logo, Tag, Text } from '@/components/ui';
+import { Avatar, Button, ClubSpotlight, Logo, Tag, Text } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { dashboardApi, type AthleteDashboard } from '@/services/api/dashboard-api';
 import { colors, fontFamily, palette, radii, spacing } from '@/theme';
@@ -76,7 +76,13 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
     };
   }, []);
 
-  const destaque = data?.recentClubs[0];
+  const clubs = (data?.recentClubs ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    companyName: c.companyName,
+    avatarUrl: c.avatarUrl,
+    createdAt: c.user?.createdAt,
+  }));
   const convite = data?.latestProposal;
   const viewers = data?.whoViewedToday ?? [];
 
@@ -108,30 +114,8 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
             <StatCell value={`${data?.stats.daysOnPlatform ?? 0}d`} label="na vitrine" />
           </View>
 
-          {/* Destaque da semana */}
-          {destaque && (
-            <View style={styles.darkCard}>
-              <View style={styles.darkBody}>
-                <Text variant="monoLabel" color={palette.cinzaOnDark}>
-                  D E S T A Q U E S · D A · S E M A N A
-                </Text>
-                <View style={styles.destaqueRow}>
-                  <Avatar name={destaque.name} uri={destaque.avatarUrl ?? undefined} tone="bone" size={44} />
-                  <Text style={styles.destaqueName} color={palette.giz}>
-                    {destaque.companyName ?? destaque.name}
-                  </Text>
-                </View>
-                {destaque.user?.createdAt && (
-                  <Text variant="sm" color={palette.cinzaOnDark}>
-                    Entrou há{' '}
-                    <Text variant="smMedium" color={colors.accent}>
-                      {timeAgoShort(destaque.user.createdAt)}
-                    </Text>
-                  </Text>
-                )}
-              </View>
-            </View>
-          )}
+          {/* Destaques da semana — slider de clubes recém-chegados */}
+          {clubs.length > 0 && <ClubSpotlight clubs={clubs} />}
 
           {/* Novo convite */}
           {convite && (

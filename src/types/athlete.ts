@@ -31,8 +31,10 @@ export type AvailabilityStatus = 'livre' | 'empregado';
 /** Whether the athlete is represented by an agent. */
 export type AgencyStatus = 'agenciado' | 'nao_agenciado';
 
-/** Optional performance stats (current season). */
+/** Optional performance stats (current/most-recent season). */
 export interface AthleteStats {
+  /** Ano da temporada mais recente reportada (ex.: 2025). */
+  ano?: number;
   gols?: number;
   assistencias?: number;
   jogosNaTemporada?: number;
@@ -48,6 +50,20 @@ export interface CareerEntry {
   clube: string;
   minutos?: number;
   gols?: number;
+}
+
+/** A published vitrine media item (video file, photo, or external link). */
+export interface AthleteMediaItem {
+  id?: string;
+  tipo: 'video' | 'foto' | 'link';
+  url: string;
+  titulo: string;
+  categoria?: string;
+  subcategoria?: string;
+  jogoInfo?: string; // "Vitória 2 × 1 ABC · 14/10/2024"
+  ano?: number;
+  /** Duração em segundos (vídeos) — backend ainda não fornece. */
+  duracaoSegundos?: number;
 }
 
 /**
@@ -78,4 +94,6 @@ export interface AthleteProfile extends BaseUser {
   numero?: number;
   stats?: AthleteStats;
   trajetoria?: CareerEntry[];
+  /** Mídias da vitrine com metadados (preserva título, categoria, jogo, etc.). */
+  media?: AthleteMediaItem[];
 }

@@ -1,5 +1,9 @@
 export { AthleteCard } from './AthleteCard';
 export { AthleteHero } from './AthleteHero';
+export { ScoutAthleteHeader } from './ScoutAthleteHeader';
+export { AthleteAboutSection } from './AthleteAboutSection';
+export { ScoutPersonalDataCard } from './ScoutPersonalDataCard';
+export { VideoThumbs } from './VideoThumbs';
 export { OwnAthleteHeader } from './OwnAthleteHeader';
 export {
   AthleteFilterModal,

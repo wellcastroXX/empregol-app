@@ -31,6 +31,7 @@ interface AuthState {
 type AuthAction =
   | { type: 'restore'; session: Session | null; user: UserProfile | null }
   | { type: 'authenticated'; session: Session; user: UserProfile }
+  | { type: 'updateUser'; user: UserProfile }
   | { type: 'pending'; email: string }
   | { type: 'signOut' };
 
@@ -44,6 +45,8 @@ function reducer(state: AuthState, action: AuthAction): AuthState {
         : { ...state, status: 'unauthenticated', session: null, user: null };
     case 'authenticated':
       return { status: 'authenticated', session: action.session, user: action.user, pendingEmail: null };
+    case 'updateUser':
+      return { ...state, user: action.user };
     case 'pending':
       return { ...state, pendingEmail: action.email };
     case 'signOut':
@@ -72,6 +75,8 @@ interface AuthContextValue extends AuthState {
   signIn(credentials: AuthCredentials): Promise<void>;
   /** Social login with a Firebase ID token (Google/Apple). */
   signInWithSocial(provider: 'google' | 'apple', idToken: string): Promise<void>;
+  /** Patch the signed-in user's profile; merges, persists, and updates state. */
+  updateUser(patch: Partial<UserProfile>): Promise<void>;
   signOut(): Promise<void>;
 }
 
@@ -80,6 +85,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const pending = useRef<Pending | null>(null);
+  // Latest state for callbacks that must read session/user at call time.
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Restore a persisted session on boot.
   useEffect(() => {
@@ -153,6 +161,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [authenticate]
   );
 
+  const updateUser = useCallback(async (patch: Partial<UserProfile>) => {
+    const { session, user } = stateRef.current;
+    if (!user) return;
+    const next = { ...user, ...patch } as UserProfile;
+    if (session) await sessionStorage.save({ session, user: next });
+    dispatch({ type: 'updateUser', user: next });
+  }, []);
+
   const signOut = useCallback(async () => {
     setAccessToken(null);
     await sessionStorage.clear();
@@ -160,9 +176,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'signOut' });
   }, []);
 
+  // Revalida o perfil logado no servidor ao autenticar — corrige sessão antiga
+  // (ex.: dados com encoding quebrado já saneados no banco) e mantém fresco.
+  useEffect(() => {
+    if (state.status !== 'authenticated' || !state.user) return;
+    let active = true;
+    authService
+      .getMe(state.user.role)
+      .then((patch) => {
+        if (active) updateUser(patch);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [state.status, updateUser]);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, register, verifyEmail, resendCode, signIn, signInWithSocial, signOut }),
-    [state, register, verifyEmail, resendCode, signIn, signInWithSocial, signOut]
+    () => ({ ...state, register, verifyEmail, resendCode, signIn, signInWithSocial, updateUser, signOut }),
+    [state, register, verifyEmail, resendCode, signIn, signInWithSocial, updateUser, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

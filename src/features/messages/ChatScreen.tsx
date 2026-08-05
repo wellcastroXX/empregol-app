@@ -14,7 +14,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { StatusBar } from 'expo-status-bar';
+import { io, type Socket } from 'socket.io-client';
+
 import { Avatar, Text } from '@/components/ui';
+import { env } from '@/config/env';
 import { useAuth } from '@/context/AuthContext';
 import { conversationsApi, type ApiMessage } from '@/services/api/conversations-api';
 import { colors, fontFamily, palette, radii, spacing, textVariants } from '@/theme';
@@ -42,7 +46,7 @@ export function ChatScreen() {
     subtitle,
   } = useLocalSearchParams<{ id: string; name?: string; subtitle?: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +56,40 @@ export function ChatScreen() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  /** Adiciona uma mensagem evitando duplicar (id já presente). */
+  const pushMessage = useCallback((msg: ApiMessage) => {
+    setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [msg, ...prev]));
+  }, []);
+
+  // Tema por papel: agente/clube vê o chat dark; atleta vê claro.
+  const dark = user?.role === 'contractor';
+  const t = dark
+    ? {
+        bg: palette.tinta,
+        elev: palette.tintaElev,
+        fg: palette.giz,
+        muted: palette.cinzaOnDark,
+        rule: palette.ruleOnDark,
+        ownBg: palette.giz,
+        ownText: palette.tinta,
+        otherBg: palette.tintaElev,
+        otherText: palette.giz,
+        sendBg: palette.gramado,
+      }
+    : {
+        bg: colors.bg,
+        elev: colors.bgElev,
+        fg: colors.fg,
+        muted: colors.fgMuted,
+        rule: colors.rule,
+        ownBg: colors.fg,
+        ownText: colors.fgOnDark,
+        otherBg: colors.bgElev,
+        otherText: colors.fg,
+        sendBg: colors.fg,
+      };
 
   const loadMessages = useCallback(
     async (nextCursor?: string) => {
@@ -73,6 +111,30 @@ export function ChatScreen() {
     loadMessages();
   }, [loadMessages]);
 
+  // Tempo real: conecta no socket, entra na sala e ouve novas mensagens.
+  useEffect(() => {
+    if (!conversationId || !session?.accessToken) return;
+    const socket = io(env.apiUrl, {
+      auth: { token: session.accessToken },
+      transports: ['websocket'],
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      socket.emit('conversation:join', conversationId);
+      socket.emit('message:read', conversationId);
+    });
+    socket.on('message:new', (msg: ApiMessage) => {
+      if (msg.conversationId === conversationId) pushMessage(msg);
+    });
+
+    return () => {
+      socket.off('message:new');
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [conversationId, session?.accessToken, pushMessage]);
+
   const loadOlder = useCallback(() => {
     if (!hasMore || loadingMore || !cursor) return;
     setLoadingMore(true);
@@ -82,17 +144,25 @@ export function ChatScreen() {
   const send = useCallback(async () => {
     const content = draft.trim();
     if (!content || sending || !conversationId) return;
-    setSending(true);
     setDraft('');
+    const socket = socketRef.current;
+    // Via socket: o servidor faz broadcast `message:new` p/ a sala (real-time
+    // nos dois lados). A própria mensagem volta pelo listener e é adicionada.
+    if (socket?.connected) {
+      socket.emit('message:send', { conversationId, type: 'TEXT', content });
+      return;
+    }
+    // Fallback REST (offline do socket).
+    setSending(true);
     try {
       const msg = await conversationsApi.sendMessage(conversationId, content);
-      setMessages((prev) => [msg, ...prev]);
+      pushMessage(msg);
     } catch {
       setDraft(content);
     } finally {
       setSending(false);
     }
-  }, [draft, sending, conversationId]);
+  }, [draft, sending, conversationId, pushMessage]);
 
   // data is newest-first (inverted list); the visually-previous bubble is messages[index+1].
   const renderMessage = useCallback(
@@ -108,18 +178,18 @@ export function ChatScreen() {
         <View>
           {showDay && (
             <View style={styles.dayDivider}>
-              <View style={styles.dayLine} />
-              <Text style={styles.dayLabel} color={colors.fgMuted}>
+              <View style={[styles.dayLine, { backgroundColor: t.rule }]} />
+              <Text style={styles.dayLabel} color={t.muted}>
                 {dayLabel(item.createdAt)}
               </Text>
-              <View style={styles.dayLine} />
+              <View style={[styles.dayLine, { backgroundColor: t.rule }]} />
             </View>
           )}
 
           <View style={[styles.msgRow, isOwn ? styles.alignEnd : styles.alignStart]}>
             <View style={styles.msgCol}>
               {showName && (
-                <Text style={styles.sender} color={colors.fgMuted} numberOfLines={1}>
+                <Text style={styles.sender} color={t.muted} numberOfLines={1}>
                   {participantName ?? 'Conversa'}
                 </Text>
               )}
@@ -127,29 +197,31 @@ export function ChatScreen() {
               <View
                 style={[
                   styles.bubble,
-                  isOwn ? styles.bubbleOwn : styles.bubbleOther,
+                  isOwn
+                    ? [styles.bubbleOwn, { backgroundColor: t.ownBg }]
+                    : [styles.bubbleOther, { backgroundColor: t.otherBg, borderColor: t.rule }],
                 ]}>
                 {item.type === 'AUDIO' ? (
                   <View style={styles.voice}>
-                    <Feather name="play" size={14} color={isOwn ? palette.giz : palette.tinta} />
+                    <Feather name="play" size={14} color={isOwn ? t.ownText : t.otherText} />
                     <View style={styles.wave}>
                       {WAVEFORM.map((h, i) => (
                         <View
                           key={i}
                           style={[
                             styles.waveBar,
-                            { height: h, backgroundColor: isOwn ? palette.giz : palette.tinta, opacity: i > 7 ? 0.4 : 1 },
+                            { height: h, backgroundColor: isOwn ? t.ownText : t.otherText, opacity: i > 7 ? 0.4 : 1 },
                           ]}
                         />
                       ))}
                     </View>
                   </View>
                 ) : item.type === 'INVITE_CARD' ? (
-                  <InviteCard title={participantName ?? 'Convite'} />
+                  <InviteCard title={participantName ?? 'Convite'} dark={dark} />
                 ) : (
                   <Text
                     variant="body"
-                    color={isOwn ? colors.fgOnDark : colors.fg}
+                    color={isOwn ? t.ownText : t.otherText}
                     style={styles.bubbleText}>
                     {item.content}
                   </Text>
@@ -157,13 +229,13 @@ export function ChatScreen() {
               </View>
 
               <View style={[styles.metaRow, isOwn ? styles.alignEnd : styles.alignStart]}>
-                <Text style={styles.metaText} color={colors.fgMuted}>
+                <Text style={styles.metaText} color={t.muted}>
                   {clockTime(item.createdAt)}
                 </Text>
                 {isOwn && (
                   <Text
                     style={styles.metaText}
-                    color={read ? colors.accent : colors.fgMuted}>
+                    color={read ? colors.accent : t.muted}>
                     · {read ? 'LIDA' : 'ENVIADA'}
                   </Text>
                 )}
@@ -173,20 +245,21 @@ export function ChatScreen() {
         </View>
       );
     },
-    [user?.id, messages, participantName],
+    [user?.id, messages, participantName, t, dark],
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]} edges={['top', 'left', 'right']}>
+      <StatusBar style={dark ? 'light' : 'dark'} />
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: t.rule }]}>
         <Pressable hitSlop={10} onPress={() => router.back()} accessibilityRole="button">
-          <Feather name="chevron-left" size={24} color={colors.fg} />
+          <Feather name="chevron-left" size={24} color={t.fg} />
         </Pressable>
         <Avatar name={participantName ?? '?'} tone="bone" size={32} />
         <View style={styles.headerText}>
           <View style={styles.headerNameRow}>
-            <Text style={styles.headerName} color={colors.fg} numberOfLines={1}>
+            <Text style={styles.headerName} color={t.fg} numberOfLines={1}>
               {participantName ?? 'Conversa'}
             </Text>
             <View style={styles.check}>
@@ -194,12 +267,12 @@ export function ChatScreen() {
             </View>
           </View>
           {!!subtitle && (
-            <Text style={styles.headerSub} color={colors.fgMuted} numberOfLines={1}>
+            <Text style={styles.headerSub} color={t.muted} numberOfLines={1}>
               {subtitle}
             </Text>
           )}
         </View>
-        <Feather name="more-horizontal" size={20} color={colors.fg} />
+        <Feather name="more-horizontal" size={20} color={t.fg} />
       </View>
 
       <KeyboardAvoidingView
@@ -222,7 +295,7 @@ export function ChatScreen() {
             onEndReachedThreshold={0.3}
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
-                <Text variant="body" color={colors.fgMuted} style={styles.emptyText}>
+                <Text variant="body" color={t.muted} style={styles.emptyText}>
                   Nenhuma mensagem ainda..{'\n'}Inicie a conversa abaixo.
                 </Text>
               </View>
@@ -234,23 +307,26 @@ export function ChatScreen() {
         )}
 
         {/* Composer */}
-        <View style={styles.composer}>
-          <Pressable style={styles.plusBtn} accessibilityRole="button" accessibilityLabel="Anexar">
-            <Feather name="plus" size={20} color={colors.fg} />
+        <View style={[styles.composer, { borderTopColor: t.rule, backgroundColor: t.bg }]}>
+          <Pressable
+            style={[styles.plusBtn, { backgroundColor: t.elev, borderColor: t.rule }]}
+            accessibilityRole="button"
+            accessibilityLabel="Anexar">
+            <Feather name="plus" size={20} color={t.fg} />
           </Pressable>
           <TextInput
             ref={inputRef}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: t.elev, borderColor: t.rule, color: t.fg }]}
             value={draft}
             onChangeText={setDraft}
             placeholder="Escreve uma mensagem..."
-            placeholderTextColor={colors.fgMuted}
+            placeholderTextColor={t.muted}
             multiline
             maxLength={2000}
             returnKeyType="default"
           />
           <Pressable
-            style={[styles.sendBtn, (!draft.trim() || sending) && styles.sendBtnDisabled]}
+            style={[styles.sendBtn, { backgroundColor: t.sendBg }, (!draft.trim() || sending) && styles.sendBtnDisabled]}
             onPress={send}
             disabled={!draft.trim() || sending}
             accessibilityRole="button"
@@ -268,13 +344,15 @@ export function ChatScreen() {
 }
 
 /** Test-invite card rendered inside the thread (INVITE_CARD message). */
-function InviteCard({ title }: { title: string }) {
+function InviteCard({ title, dark }: { title: string; dark?: boolean }) {
+  const fg = dark ? palette.giz : colors.fg;
+  const muted = dark ? palette.cinzaOnDark : colors.fgMuted;
   return (
     <View style={styles.invite}>
-      <Text style={styles.inviteEyebrow} color={colors.fgMuted}>
+      <Text style={styles.inviteEyebrow} color={muted}>
         C O N V I T E · D E · T E S T E
       </Text>
-      <Text style={styles.inviteTitle} color={colors.fg}>
+      <Text style={styles.inviteTitle} color={fg}>
         {title}
         <Text style={styles.inviteTitle} color={colors.accent}>
           .
@@ -290,10 +368,10 @@ function InviteCard({ title }: { title: string }) {
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.inviteBtn, styles.inviteDecline]}
+          style={[styles.inviteBtn, styles.inviteDecline, { borderColor: fg }]}
           onPress={() => Alert.alert('Em breve', 'Recusa de convite disponível em breve.')}
           accessibilityRole="button">
-          <Text style={styles.inviteBtnLabel} color={colors.fg}>
+          <Text style={styles.inviteBtnLabel} color={fg}>
             RECUSAR
           </Text>
         </Pressable>

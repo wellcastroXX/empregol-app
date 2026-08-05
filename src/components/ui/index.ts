@@ -37,3 +37,7 @@ export type { ScreenProps } from './Screen';
 export { Logo } from './Logo';
 export type { LogoProps } from './Logo';
 export { GoogleLogo } from './GoogleLogo';
+export { VideoThumb } from './VideoThumb';
+export type { VideoThumbProps } from './VideoThumb';
+export { ClubSpotlight } from './ClubSpotlight';
+export type { SpotlightClub } from './ClubSpotlight';

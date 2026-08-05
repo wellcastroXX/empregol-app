@@ -1,4 +1,3 @@
-export { WelcomeScreen } from './WelcomeScreen';
 export { LoginScreen } from './LoginScreen';
 export { ForgotPasswordScreen } from './ForgotPasswordScreen';
 export { AccountTypeScreen } from './AccountTypeScreen';

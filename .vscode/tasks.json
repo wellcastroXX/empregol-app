@@ -3,24 +3,40 @@
   "tasks": [
     {
       "label": "boot-emulator",
-      "detail": "Sobe o emulador Android (Pixel_9_Pro) só se nenhum estiver conectado.",
+      "detail": "Sobe um emulador Android só se nenhum estiver conectado (multiplataforma).",
       "type": "process",
-      "command": "powershell.exe",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        "if (-not (adb devices | Select-String 'emulator-')) { Start-Process \"$env:LOCALAPPDATA\\Android\\Sdk\\emulator\\emulator.exe\" -ArgumentList '-avd','Pixel_9_Pro' }"
-      ],
+      "osx": {
+        "command": "/bin/zsh",
+        "args": [
+          "-c",
+          "EMU=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}/emulator/emulator\"; if ! adb devices | grep -q 'emulator-'; then nohup \"$EMU\" -avd \"$(\"$EMU\" -list-avds | head -1)\" >/dev/null 2>&1 &! ; fi"
+        ]
+      },
+      "linux": {
+        "command": "/bin/bash",
+        "args": [
+          "-c",
+          "EMU=\"${ANDROID_HOME:-$HOME/Android/Sdk}/emulator/emulator\"; if ! adb devices | grep -q 'emulator-'; then nohup \"$EMU\" -avd \"$(\"$EMU\" -list-avds | head -1)\" >/dev/null 2>&1 & disown; fi"
+        ]
+      },
+      "windows": {
+        "command": "powershell.exe",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-Command",
+          "if (-not (adb devices | Select-String 'emulator-')) { Start-Process \"$env:LOCALAPPDATA\\Android\\Sdk\\emulator\\emulator.exe\" -ArgumentList '-avd','Pixel_9_Pro' }"
+        ]
+      },
       "problemMatcher": [],
       "presentation": { "reveal": "silent", "panel": "shared" }
     },
     {
       "label": "expo-android",
-      "detail": "Inicia o Metro e abre o app no emulador Android (Expo Go).",
+      "detail": "Inicia o Metro e abre o app no emulador Android (dev build).",
       "type": "shell",
-      "command": "npx expo start --android",
+      "command": "npx expo run:android",
       "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
       "problemMatcher": [],

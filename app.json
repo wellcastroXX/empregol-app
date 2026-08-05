@@ -37,7 +37,15 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Empregol usa suas fotos para você publicar mídias na sua vitrine.",
+          "cameraPermission": "O Empregol usa a câmera para você gravar jogadas e fotos para a vitrine.",
+          "microphonePermission": "O Empregol usa o microfone ao gravar vídeos das suas jogadas."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

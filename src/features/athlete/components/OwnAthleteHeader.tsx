@@ -143,17 +143,17 @@ export function OwnAthleteHeader({ athlete, insetsTop, onUpdatePhoto, onUpdateDa
 
           <View style={styles.verifiedRow}>
             <View style={[styles.checkDot, !isVerified && styles.checkDotPending]}>
-              <Feather name={isVerified ? 'check' : 'clock'} size={11} color={palette.giz} />
+              <Feather name={isVerified ? 'check' : 'clock'} size={13} color={palette.giz} />
             </View>
-            <Text variant="monoLabel" color={palette.cinzaOnDark}>
+            <Text style={styles.verifiedText} color={palette.cinzaOnDark}>
               {isVerified ? `VERIFICADO · ${daysActive}D` : 'AGUARDANDO'}
             </Text>
           </View>
 
           <View style={styles.statusTags}>
-            <Tag label={availability.label} variant={athlete.disponibilidade === 'livre' ? 'live' : 'empregado'} dot={athlete.disponibilidade === 'livre'} />
-            <Tag label={level.label} variant="ghostLight" />
-            <Tag label={agency.label} variant="ghostLight" />
+            <Tag label={availability.label} variant={athlete.disponibilidade === 'livre' ? 'live' : 'empregado'} dot={athlete.disponibilidade === 'livre'} size="md" />
+            <Tag label={level.label} variant="ghostLight" size="md" />
+            <Tag label={agency.label} variant="ghostLight" size="md" />
           </View>
         </View>
       </View>
@@ -214,7 +214,8 @@ const styles = StyleSheet.create({
   initials: {
     fontFamily: fontFamily.displayBold,
     fontSize: PHOTO_W * 0.34,
-    includeFontPadding: false,
+    lineHeight: PHOTO_W * 0.42,
+    textAlign: 'center',
   },
   jersey: {
     position: 'absolute',
@@ -245,10 +246,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: 2,
   },
+  verifiedText: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
   checkDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: palette.gramado,
     alignItems: 'center',
     justifyContent: 'center',

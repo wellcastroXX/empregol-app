@@ -1,8 +1,10 @@
-import type { AuthCredentials, AuthResult, SignUpPayload, UserRole } from '@/types';
-import { ApiError } from './api/client';
+import type { AuthCredentials, AuthResult, SignUpPayload, UserProfile, UserRole } from '@/types';
+import { ApiError, apiRequest } from './api/client';
 import { authApi } from './api/auth-api';
 import {
+  toAthleteMePatch,
   toAthleteRegisterBody,
+  toContractorMePatch,
   toContractorRegisterBody,
   toUserProfile,
 } from './api/mappers';
@@ -40,9 +42,20 @@ export interface AuthService {
   verifyEmail(role: UserRole, email: string, code: string): Promise<void>;
   resendCode(role: UserRole, email: string): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
+  /** Revalida o perfil logado no servidor (patch parcial p/ atualizar a sessão). */
+  getMe(role: UserRole): Promise<Partial<UserProfile>>;
 }
 
 class ApiAuthService implements AuthService {
+  async getMe(role: UserRole): Promise<Partial<UserProfile>> {
+    if (role === 'athlete') {
+      const res = await apiRequest<{ status: string; data: Parameters<typeof toAthleteMePatch>[0] }>('/athletes/me');
+      return toAthleteMePatch(res.data);
+    }
+    const res = await apiRequest<{ status: string; data: Parameters<typeof toContractorMePatch>[0] }>('/contractors/me');
+    return toContractorMePatch(res.data);
+  }
+
   async register(payload: SignUpPayload): Promise<void> {
     try {
       const body =

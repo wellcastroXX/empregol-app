@@ -33,7 +33,7 @@ export function Avatar({ name, uri, size = 48, tone = 'ink' }: AvatarProps) {
         { backgroundColor: isInk ? palette.tinta : palette.osso },
       ]}>
       <Text
-        style={[styles.initials, { fontSize: size * 0.42 }]}
+        style={[styles.initials, { fontSize: size * 0.42, lineHeight: size * 0.5 }]}
         color={isInk ? palette.giz : palette.tinta}>
         {toInitials(name)}
       </Text>
@@ -51,6 +51,6 @@ const styles = StyleSheet.create({
   },
   initials: {
     fontFamily: fontFamily.displayBold,
-    includeFontPadding: false,
+    textAlign: 'center',
   },
 });

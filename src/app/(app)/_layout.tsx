@@ -17,12 +17,15 @@ export default function AppLayout() {
   }
 
   if (status === 'unauthenticated') {
-    return <Redirect href="/welcome" />;
+    return <Redirect href="/login" />;
   }
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="meus-dados" />
+      <Stack.Screen name="estatisticas" />
+      <Stack.Screen name="nova-midia" />
       <Stack.Screen name="athletes/[id]" />
       <Stack.Screen name="conversas/[id]" />
     </Stack>

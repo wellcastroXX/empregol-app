@@ -1,32 +1,43 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, EmptyState, Tag, Text } from '@/components/ui';
+import { Button, EmptyState, Text } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { conversationsApi } from '@/services/api/conversations-api';
+import { mediaApi } from '@/services/api/media-api';
+import { toMediaItems } from '@/services/api/mappers';
 import { profileService } from '@/services';
-import { colors, spacing } from '@/theme';
+import { colors, palette, spacing } from '@/theme';
 import { POSITIONS } from '@/constants/positions';
-import type { AthleteProfile, DominantFoot } from '@/types';
+import type { AthleteMediaItem, AthleteProfile } from '@/types';
 import {
-  AthleteHero,
+  AthleteAboutSection,
   AthleteStats,
   OwnAthleteHeader,
   PersonalDataSection,
-  SalaryCard,
+  ScoutAthleteHeader,
+  ScoutPersonalDataCard,
   TrajetoriaSection,
-  VideoList,
+  VideoThumbs,
 } from '../components';
 
-const FOOT_LABEL: Record<DominantFoot, string> = {
-  direito: 'DESTRO',
-  esquerdo: 'CANHOTO',
-  ambidestro: 'AMBIDESTRO',
-};
+/**
+ * Fallback: URLs sem metadados → itens mínimos. Ignora URIs locais (file://,
+ * content://) que nunca foram enviadas ao servidor — elas não abrem.
+ */
+function videosToItems(videos: string[]): AthleteMediaItem[] {
+  return videos
+    .filter((url) => !/^(file|content):/i.test(url.trim()))
+    .map((url, i) => ({
+      tipo: 'link',
+      url,
+      titulo: `Jogada ${String(i + 1).padStart(2, '0')}`,
+    }));
+}
 
 export type AthleteProfileScreenProps = {
   athleteId?: string;
@@ -45,11 +56,31 @@ export function AthleteProfileScreen({
 }: AthleteProfileScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, signOut } = useAuth();
-  const isContractor = user?.role === 'contractor';
+  const { signOut } = useAuth();
   const [athlete, setAthlete] = useState<AthleteProfile | null>(provided ?? null);
   const [loading, setLoading] = useState(!provided);
   const [chatLoading, setChatLoading] = useState(false);
+  const [ownMedia, setOwnMedia] = useState<AthleteMediaItem[]>([]);
+
+  // Perfil próprio: reflete atualizações do usuário (ex.: após publicar mídia).
+  useEffect(() => {
+    if (provided) setAthlete(provided);
+  }, [provided]);
+
+  // Perfil próprio: busca a mídia da vitrine a cada foco (reflete novos uploads).
+  useFocusEffect(
+    useCallback(() => {
+      if (scout) return;
+      let active = true;
+      mediaApi
+        .listMine()
+        .then((list) => active && setOwnMedia(toMediaItems(list)))
+        .catch(() => undefined);
+      return () => {
+        active = false;
+      };
+    }, [scout]),
+  );
 
   useEffect(() => {
     if (provided || !athleteId) return;
@@ -89,8 +120,6 @@ export function AthleteProfileScreen({
   const posLabel = posOpt
     ? `${posOpt.short} · ${posOpt.label.toUpperCase()}`
     : athlete.posicao.toUpperCase();
-  const alturaStr = `${(athlete.alturaCm / 100).toFixed(2).replace('.', ',')}M`;
-  const ageHeightLabel = `${athlete.idade} ANOS · ${alturaStr}`;
 
   async function openChat() {
     if (!athlete?.id || chatLoading) return;
@@ -123,7 +152,7 @@ export function AthleteProfileScreen({
             athlete={athlete}
             insetsTop={insets.top}
             onUpdatePhoto={() => Alert.alert('Em breve', 'Atualização de foto disponível em breve.')}
-            onUpdateData={onSettings}
+            onUpdateData={() => router.push('/meus-dados')}
             onShare={() => Share.share({ message: `Confira o perfil de ${athlete.nome} no Empregol.` })}
           />
 
@@ -131,7 +160,12 @@ export function AthleteProfileScreen({
             <AthleteStats athlete={athlete} />
             {showPersonalData && <PersonalDataSection athlete={athlete} />}
             <TrajetoriaSection entries={athlete.trajetoria} />
-            <VideoList videos={athlete.videos} />
+            <VideoThumbs
+              media={ownMedia.length ? ownMedia : videosToItems(athlete.videos)}
+              photoUrl={athlete.fotoUrl}
+              jerseyNumber={athlete.numero}
+              emptyMessage="Suba suas melhores jogadas. É o que clubes veem primeiro."
+            />
 
             <Pressable onPress={handleSignOut} style={styles.logoutRow} accessibilityRole="button">
               <Text variant="sm" color={colors.statusEmpregado}>Sair da conta ›</Text>
@@ -142,92 +176,58 @@ export function AthleteProfileScreen({
     );
   }
 
+  // ── Scout view (AGENT/CLUB looking at an athlete) — dark ──
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      {/* ── Header ── */}
+    <SafeAreaView style={styles.scoutSafe} edges={['top', 'left', 'right']}>
+      <StatusBar style="light" />
+      {/* Header */}
       <View style={styles.topBar}>
-        {scout ? (
-          <>
-            <Pressable hitSlop={8} onPress={() => router.back()} accessibilityRole="button">
-              <Text variant="eyebrow" color={colors.fg}>‹ VOLTAR</Text>
-            </Pressable>
-            <Text variant="h3" color={colors.fg}>★</Text>
-          </>
-        ) : (
-          <>
-            <Text variant="eyebrow" color={colors.fg}>P E R F I L</Text>
-            {onSettings && (
-              <Pressable hitSlop={8} onPress={onSettings} accessibilityRole="button">
-                <Feather name="share-2" size={18} color={colors.fg} />
-              </Pressable>
-            )}
-          </>
-        )}
+        <Pressable hitSlop={8} onPress={() => router.back()} accessibilityRole="button">
+          <Text variant="eyebrow" color={palette.giz}>‹ VOLTAR</Text>
+        </Pressable>
+        <View style={styles.topActions}>
+          <Feather name="star" size={18} color={palette.giz} />
+          <Feather name="more-horizontal" size={20} color={palette.giz} />
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Hero — full-width, no horizontal padding */}
-        <AthleteHero athlete={athlete} />
+        {/* Light editorial hero */}
+        <ScoutAthleteHeader athlete={athlete} />
 
-        {/* ── All padded content ── */}
+        {/* Padded content */}
         <View style={styles.body}>
-          {/* Data chips */}
-          <View style={styles.chips}>
-            <Tag label={posLabel} />
-            <Tag label={ageHeightLabel} />
-            <Tag label={FOOT_LABEL[athlete.peDominante]} />
-          </View>
-
-          {/* Action buttons — own profile only */}
-          {!scout && (
-            <View style={styles.actions}>
-              <Button
-                style={styles.halfBtn}
-                variant="ghost"
-                size="sm"
-                label="ATUALIZAR FOTO  📷"
-                onPress={() => Alert.alert('Em breve', 'Funcionalidade disponível em breve.')}
-              />
-              <Button
-                style={styles.halfBtn}
-                variant="primary"
-                size="sm"
-                label="ATUALIZAR DADOS  ✏"
-                onPress={onSettings}
-              />
-            </View>
-          )}
-
-          {/* Stats */}
-          <AthleteStats athlete={athlete} />
-
-          {/* Private data */}
-          {showPersonalData && <PersonalDataSection athlete={athlete} />}
-
-          {/* Trajetória */}
-          <TrajetoriaSection entries={athlete.trajetoria} />
-
-          {/* Base salarial — scout view only */}
-          {scout && athlete.baseSalarial > 0 && <SalaryCard value={athlete.baseSalarial} />}
-
-          {/* Vídeos */}
-          <VideoList videos={athlete.videos} />
-
-          {/* Logout */}
-          {!scout && (
-            <Pressable onPress={handleSignOut} style={styles.logoutRow} accessibilityRole="button">
-              <Text variant="sm" color={colors.statusEmpregado}>Sair da conta ›</Text>
-            </Pressable>
-          )}
+          <AthleteAboutSection athlete={athlete} />
+          <AthleteStats athlete={athlete} showClub={false} dark />
+          <ScoutPersonalDataCard athlete={athlete} />
+          <TrajetoriaSection entries={athlete.trajetoria} dark />
+          <VideoThumbs
+            media={athlete.media?.length ? athlete.media : videosToItems(athlete.videos)}
+            photoUrl={athlete.fotoUrl}
+            jerseyNumber={athlete.numero}
+            dark
+          />
         </View>
       </ScrollView>
 
-      {/* Scout sticky CTA */}
-      {scout && isContractor && (
-        <View style={styles.footer}>
-          <Button label="Conversar" chevron fullWidth loading={chatLoading} onPress={openChat} />
+      {/* Sticky CTA */}
+      <View style={styles.footer}>
+        <View style={styles.ctaRow}>
+          <Button
+            style={styles.ctaBtn}
+            label="CONVERSAR COM ATLETA"
+            chevron
+            loading={chatLoading}
+            onPress={openChat}
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Favoritar"
+            style={({ pressed }) => [styles.starBtn, pressed && styles.starBtnPressed]}>
+            <Feather name="star" size={20} color={colors.fg} />
+          </Pressable>
         </View>
-      )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -236,6 +236,10 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  scoutSafe: {
+    flex: 1,
+    backgroundColor: palette.tinta,
   },
   ownRoot: {
     flex: 1,
@@ -266,6 +270,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: '5%',
     paddingVertical: spacing.md,
   },
+  topActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+  },
   scroll: {
     paddingBottom: spacing['4xl'],
   },
@@ -274,18 +283,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing['2xl'],
     gap: spacing['2xl'],
   },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  halfBtn: {
-    flex: 1,
-  },
   logoutRow: {
     paddingVertical: spacing.sm,
     alignItems: 'center',
@@ -293,7 +290,27 @@ const styles = StyleSheet.create({
   footer: {
     padding: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.rule,
-    backgroundColor: colors.bg,
+    borderTopColor: palette.ruleOnDark,
+    backgroundColor: palette.tinta,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.md,
+  },
+  ctaBtn: {
+    flex: 1,
+  },
+  starBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: palette.giz64,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  starBtnPressed: {
+    opacity: 0.7,
   },
 });

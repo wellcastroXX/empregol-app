@@ -5,50 +5,54 @@ import { colors, fontFamily, palette, spacing } from '@/theme';
 import type { CareerEntry } from '@/types';
 
 /** Career timeline — year + club + stats with dot-and-line left indicator. */
-export function TrajetoriaSection({ entries = [] }: { entries?: CareerEntry[] }) {
+export function TrajetoriaSection({ entries = [], dark = false }: { entries?: CareerEntry[]; dark?: boolean }) {
+  const fg = dark ? palette.giz : colors.fg;
+  const muted = dark ? palette.cinzaOnDark : colors.fgMuted;
+  const lineColor = dark ? palette.ruleOnDark : colors.rule;
   return (
     <View style={styles.wrapper}>
-      <SectionHeader eyebrow="T R A J E T Ó R I A" />
+      <SectionHeader eyebrow="T R A J E T Ó R I A" dark={dark} />
       {entries.length === 0 ? (
         <EmptyState
           icon="compass"
           title="Trajetória não preenchida."
           message="Adicione seus clubes anteriores para fortalecer seu perfil."
+          dark={dark}
         />
       ) : (
         <View>
           {entries.map((entry, index) => {
             const isFirst = index === 0;
             const isLast = index === entries.length - 1;
-            const dotColor = isFirst ? palette.gramado : palette.cinza;
+            const dotColor = isFirst ? palette.gramado : dark ? palette.cinzaOnDark : palette.cinza;
             return (
               <View key={`${entry.ano}-${entry.clube}`} style={styles.entry}>
                 {/* Timeline indicator column */}
                 <View style={styles.timeline}>
-                  {!isFirst && <View style={styles.lineTop} />}
+                  {!isFirst && <View style={[styles.lineTop, { backgroundColor: lineColor }]} />}
                   <View style={[styles.dot, { backgroundColor: dotColor }]} />
-                  {!isLast && <View style={styles.lineBottom} />}
+                  {!isLast && <View style={[styles.lineBottom, { backgroundColor: lineColor }]} />}
                 </View>
 
                 {/* Content */}
                 <View style={styles.content}>
                   <View style={styles.row}>
                     <View style={styles.clubInfo}>
-                      <Text style={styles.year} color={colors.fgMuted}>
+                      <Text style={styles.year} color={muted}>
                         {String(entry.ano)}
                       </Text>
-                      <Text variant="smMedium" color={colors.fg}>
+                      <Text variant="smMedium" color={fg}>
                         {entry.clube}
                       </Text>
                     </View>
                     <View style={styles.meta}>
                       {entry.minutos != null && (
-                        <Text style={styles.statValue} color={colors.fgMuted}>
+                        <Text style={styles.statValue} color={muted}>
                           {entry.minutos.toLocaleString('pt-BR')}&apos;
                         </Text>
                       )}
                       {entry.gols != null && (
-                        <Text style={styles.statLabel} color={colors.fgMuted}>
+                        <Text style={styles.statLabel} color={muted}>
                           {entry.gols} GOLS
                         </Text>
                       )}

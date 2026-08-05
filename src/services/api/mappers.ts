@@ -1,6 +1,7 @@
 import { POSITIONS } from '@/constants/positions';
 import type {
   AgencyStatus,
+  AthleteMediaItem,
   AthleteProfile,
   AvailabilityStatus,
   ContractorKind,
@@ -202,11 +203,78 @@ function toContractorProfile(user: ApiUser, c: ApiContractor): ContractorProfile
   };
 }
 
+/* ── /me → patch parcial (revalida a sessão; não inclui email/role) ──────────── */
+
+/** GET /athletes/me → campos de exibição p/ atualizar a sessão local. */
+export function toAthleteMePatch(a: ApiAthlete): Partial<AthleteProfile> {
+  return {
+    nome: a.fullName,
+    telefone: maskPhone(a.phone),
+    fotoUrl: a.avatarUrl ?? undefined,
+    redeSocial: a.socialMedia ?? undefined,
+    informacoesAdicionais: a.additionalInfo ?? undefined,
+    cpf: maskCpf(a.cpf),
+    dataNascimento: a.birthDate,
+    idade: ageFromBirthdate(a.birthDate),
+    naturalidade: a.naturalidade,
+    posicao: positionFromApi(a.position),
+    peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
+    alturaCm: a.height,
+    pesoKg: a.weight,
+    nivel: LEVEL_FROM_API[a.level] ?? 'profissional',
+    disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? 'livre',
+    agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? 'nao_agenciado',
+    baseSalarial: a.expectedSalary != null ? Number(a.expectedSalary) : 0,
+    numero: a.jerseyNumber ?? undefined,
+  };
+}
+
+/** GET /contractors/me → campos de exibição p/ atualizar a sessão local. */
+export function toContractorMePatch(c: ApiContractor): Partial<ContractorProfile> {
+  return {
+    tipo: CONTRACTOR_FROM_API[c.type] ?? 'club',
+    nome: c.name,
+    telefone: maskPhone(c.phone),
+    fotoUrl: c.avatarUrl ?? undefined,
+    redeSocial: c.socialMedia ?? undefined,
+    informacoesAdicionais: c.additionalInfo ?? undefined,
+    cpf: c.cpf ? maskCpf(c.cpf) : undefined,
+    cnpj: c.cnpj ? maskCnpj(c.cnpj) : undefined,
+    razaoSocial: c.companyName ?? undefined,
+  };
+}
+
 /* ── Public athlete (explore card / basic profile) → AthleteProfile ─────────── */
 
 interface ApiMedia {
+  id?: string;
   url: string;
   mediaType: string;
+  title?: string;
+  category?: string | null;
+  subcategory?: string | null;
+  gameInfo?: string | null;
+  year?: number;
+}
+
+const MEDIA_TIPO_FROM_API: Record<string, AthleteMediaItem['tipo']> = {
+  VIDEO: 'video',
+  PHOTO: 'foto',
+  EXTERNAL_LINK: 'link',
+};
+
+/** API media list → domain media items (preserva título/categoria/jogo). */
+export function toMediaItems(media?: ApiMedia[]): AthleteMediaItem[] {
+  return (media ?? []).map((m) => ({
+    id: m.id,
+    tipo: MEDIA_TIPO_FROM_API[m.mediaType] ?? 'link',
+    url: m.url,
+    titulo: m.title ?? 'Jogada',
+    categoria: m.category ?? undefined,
+    subcategoria: m.subcategory ?? undefined,
+    jogoInfo: m.gameInfo ?? undefined,
+    ano: m.year,
+  }));
 }
 interface ApiPublicAthlete extends Partial<ApiAthlete> {
   id: string;
@@ -227,9 +295,8 @@ interface ApiPublicAthlete extends Partial<ApiAthlete> {
  * Private fields are left empty — the profile UI hides them for non-own views.
  */
 export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
-  const videos = (a.media ?? [])
-    .filter((m) => m.mediaType === 'VIDEO' || m.mediaType === 'EXTERNAL_LINK')
-    .map((m) => m.url);
+  const media = toMediaItems(a.media);
+  const videos = a.media?.map((m) => m.url) ?? [];
 
   return {
     id: a.id,
@@ -252,6 +319,7 @@ export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
     alturaCm: a.height,
     pesoKg: a.weight,
     videos,
+    media,
     nivel: LEVEL_FROM_API[a.level] ?? 'profissional',
     disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? 'livre',
     agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? 'nao_agenciado',

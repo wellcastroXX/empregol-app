@@ -7,12 +7,14 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Tag, Text } from '@/components/ui';
+import { AthleteSearchOverlay } from '@/features/athlete/components/AthleteSearchOverlay';
+import { AthleteSpotlight } from '@/features/athlete/components/AthleteSpotlight';
 import { POSITIONS } from '@/constants/positions';
 import { conversationsApi } from '@/services/api/conversations-api';
 import { profileService } from '@/services';
 import { fontFamily, palette, radii, spacing } from '@/theme';
 import type { AthleteProfile, ContractorProfile } from '@/types';
-import { initials as toInitials, timeAgoShort } from '@/utils';
+import { initials as toInitials } from '@/utils';
 
 /** Dark canvas tokens for the contractor environment (#141413). */
 const D = {
@@ -41,6 +43,7 @@ export function ContractorHome({ contractor }: { contractor: ContractorProfile }
   const [convCount, setConvCount] = useState(0);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -64,7 +67,6 @@ export function ContractorHome({ contractor }: { contractor: ContractorProfile }
 
   const clubName = contractor.razaoSocial ?? contractor.nome;
   const featured = athletes.slice(0, 6);
-  const destaque = featured[0];
   const total = athletes.length;
 
   return (
@@ -117,7 +119,10 @@ export function ContractorHome({ contractor }: { contractor: ContractorProfile }
         </View>
 
         {/* Search CTA */}
-        <Pressable style={styles.search} onPress={() => router.push('/discover')} accessibilityRole="button">
+        <Pressable
+          style={[styles.search, searchOpen && styles.searchHidden]}
+          onPress={() => setSearchOpen(true)}
+          accessibilityRole="button">
           <Feather name="search" size={18} color={D.muted} />
           <Text variant="body" color={D.muted}>
             Buscar atleta · posição · status...
@@ -128,51 +133,13 @@ export function ContractorHome({ contractor }: { contractor: ContractorProfile }
           <ActivityIndicator color={D.accent} style={styles.loader} />
         ) : (
           <>
-            {/* Destaque da semana */}
-            {destaque && (
-              <View style={styles.destaqueCard}>
-                <View style={styles.destaqueBody}>
-                  <Text style={styles.destaqueEyebrow} color={D.fg}>
-                    D E S T A Q U E S · D A · S E M A N A
-                  </Text>
-                  <View style={styles.destaqueRow}>
-                    {destaque.fotoUrl ? (
-                      <Image source={{ uri: destaque.fotoUrl }} style={styles.destaquePhoto} contentFit="cover" />
-                    ) : (
-                      <View style={[styles.destaquePhoto, styles.destaquePhotoFallback]}>
-                        <Text style={styles.destaquePhotoInit} color={palette.giz}>
-                          {toInitials(destaque.nome)}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={styles.destaqueName} color={D.fg} numberOfLines={2}>
-                      {destaque.nome}
-                    </Text>
-                  </View>
-                  <Text style={styles.destaqueCity} color={D.fg}>
-                    {destaque.naturalidade?.toUpperCase()}
-                  </Text>
-                  <View style={styles.destaqueFooter}>
-                    <Text variant="smMedium" color={D.fg}>
-                      Entrou {timeAgoShort(destaque.criadoEm)} atrás
-                    </Text>
-                    <Text variant="sm" color="rgba(251,250,245,0.7)">
-                      Está agora na <Text variant="smMedium" color={D.fg}>empregol</Text>
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.dots}>
-                  {featured.map((a, i) => (
-                    <View key={a.id} style={[styles.dot, i === 0 && styles.dotActive]} />
-                  ))}
-                </View>
-              </View>
-            )}
+            {/* Destaques da semana — carrossel vertical automático de atletas */}
+            {featured.length > 0 && <AthleteSpotlight athletes={featured} />}
 
             {/* Últimas visualizações */}
             {athletes.length > 0 && (
               <View style={styles.section}>
-                <Text variant="eyebrow" color={D.muted}>
+                <Text variant="eyebrow" color={D.muted} style={styles.sectionTitle}>
                   Ú L T I M A S · V I S U A L I Z A Ç Õ E S
                 </Text>
                 <ScrollView
@@ -198,7 +165,7 @@ export function ContractorHome({ contractor }: { contractor: ContractorProfile }
         {/* Seus favoritos (preview usa atletas reais) */}
         {athletes.length > 0 && (
           <View style={styles.section}>
-            <Text variant="eyebrow" color={D.muted}>
+            <Text variant="eyebrow" color={D.muted} style={styles.sectionTitle}>
               S E U S · F A V O R I T O S
             </Text>
             <View style={styles.favGrid}>
@@ -220,6 +187,17 @@ export function ContractorHome({ contractor }: { contractor: ContractorProfile }
           </View>
         )}
       </ScrollView>
+
+      <AthleteSearchOverlay
+        visible={searchOpen}
+        athletes={athletes}
+        dark
+        onClose={() => setSearchOpen(false)}
+        onSelect={(id) => {
+          setSearchOpen(false);
+          router.push(`/athletes/${id}`);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -335,9 +313,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(251,250,245,0.2)',
     backgroundColor: D.elev,
   },
+  searchHidden: { opacity: 0 },
 
   loader: { marginVertical: spacing.xl },
   section: { gap: spacing.md },
+  sectionTitle: { paddingHorizontal: spacing.lg },
 
   destaqueCard: {
     marginHorizontal: spacing.lg,

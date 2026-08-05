@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { SectionHeader, Text } from '@/components/ui';
-import { colors, fontFamily, radii, spacing } from '@/theme';
+import { colors, fontFamily, palette, radii, spacing } from '@/theme';
 import type { AthleteProfile } from '@/types';
 
 function formatMinutos(min: number | undefined): string {
@@ -9,13 +9,13 @@ function formatMinutos(min: number | undefined): string {
   return `${min.toLocaleString('pt-BR')}'`;
 }
 
-function StatCell({ value, label }: { value: string; label: string }) {
+function StatCell({ value, label, fg, muted }: { value: string; label: string; fg: string; muted: string }) {
   return (
     <View style={styles.cell}>
-      <Text style={styles.value} color={colors.fg}>
+      <Text style={styles.value} color={fg}>
         {value}
       </Text>
-      <Text variant="monoLabel" color={colors.fgMuted}>
+      <Text variant="monoLabel" color={muted}>
         {label}
       </Text>
     </View>
@@ -23,38 +23,44 @@ function StatCell({ value, label }: { value: string; label: string }) {
 }
 
 /** Stat grid + clube atual — section "ESTATÍSTICAS · {ano}". */
-export function AthleteStats({ athlete }: { athlete: AthleteProfile }) {
-  const year = new Date().getFullYear();
+export function AthleteStats({ athlete, showClub = true, dark = false }: { athlete: AthleteProfile; showClub?: boolean; dark?: boolean }) {
   const s = athlete.stats;
+  const has = !!s;
+  const year = s?.ano ?? new Date().getFullYear();
+
+  const fg = dark ? palette.giz : colors.fg;
+  const muted = dark ? palette.cinzaOnDark : colors.fgMuted;
 
   const cells = [
-    { value: s?.gols != null ? String(s.gols) : '—', label: 'GOLS' },
-    { value: s?.assistencias != null ? String(s.assistencias) : '—', label: 'ASSIST.' },
-    { value: s?.jogosNaTemporada != null ? String(s.jogosNaTemporada) : '—', label: 'JOGOS' },
-    { value: formatMinutos(s?.minutosNaTemporada), label: 'MINUTOS' },
-    { value: s?.cartoesAmarelos != null ? String(s.cartoesAmarelos) : '—', label: 'AMARELOS' },
-    { value: s?.cartoesVermelhos != null ? String(s.cartoesVermelhos) : '—', label: 'VERMELHOS' },
+    { value: has ? String(s?.gols ?? 0) : '—', label: 'GOLS' },
+    { value: has ? String(s?.assistencias ?? 0) : '—', label: 'ASSIST.' },
+    { value: has ? String(s?.jogosNaTemporada ?? 0) : '—', label: 'JOGOS' },
+    { value: has ? formatMinutos(s?.minutosNaTemporada ?? 0) : '—', label: 'MINUTOS' },
+    { value: has ? String(s?.cartoesAmarelos ?? 0) : '—', label: 'AMARELOS' },
+    { value: has ? String(s?.cartoesVermelhos ?? 0) : '—', label: 'VERMELHOS' },
   ];
 
   return (
     <View style={styles.wrapper}>
-      <SectionHeader eyebrow={`E S T A T Í S T I C A S · ${year}`} />
+      <SectionHeader eyebrow={`E S T A T Í S T I C A S · ${year}`} dark={dark} />
 
-      <View style={styles.grid}>
+      <View style={[styles.grid, dark && styles.gridDark]}>
         {cells.map((c) => (
-          <StatCell key={c.label} value={c.value} label={c.label} />
+          <StatCell key={c.label} value={c.value} label={c.label} fg={fg} muted={muted} />
         ))}
       </View>
 
       {/* Clube Atual */}
-      <View style={styles.clubCard}>
-        <Text variant="monoLabel" color={colors.fgMuted}>
-          CLUBE ATUAL
-        </Text>
-        <Text variant="smMedium" color={colors.fg}>
-          {s?.ultimoClube ?? 'Nenhum'}
-        </Text>
-      </View>
+      {showClub && (
+        <View style={[styles.clubCard, dark && styles.clubCardDark]}>
+          <Text variant="monoLabel" color={muted}>
+            CLUBE ATUAL
+          </Text>
+          <Text variant="smMedium" color={fg}>
+            {s?.ultimoClube ?? 'Nenhum'}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -69,6 +75,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1.5,
     borderTopColor: colors.ruleStrong,
     paddingTop: spacing.xl,
+  },
+  gridDark: {
+    borderTopColor: palette.cinzaOnDark,
   },
   cell: {
     width: '33.33%',
@@ -90,5 +99,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  clubCardDark: {
+    backgroundColor: palette.tintaElev,
+    borderColor: palette.ruleOnDark,
   },
 });

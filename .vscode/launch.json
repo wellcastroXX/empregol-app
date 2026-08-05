@@ -2,18 +2,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "▶ Empregol · Android (emulador)",
+      "name": "▶ Empregol · Android (dev build)",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npx expo start --android",
+      "command": "npx expo run:android",
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "boot-emulator"
     },
     {
-      "name": "▶ Empregol · Android (limpar cache)",
+      "name": "▶ Empregol · Android (Metro, limpar cache)",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npx expo start --android --clear",
+      "command": "npx expo start --dev-client --clear",
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "boot-emulator"
     },
