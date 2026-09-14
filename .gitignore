@@ -52,3 +52,8 @@ firebase/GoogleService-Info.plist
 # Service account = SEGREDO de admin — pertence ao BACKEND, nunca ao app cliente
 firebase/*adminsdk*.json
 *-firebase-adminsdk-*.json
+
+# Service account da Google Play (usada pelo `eas submit`)
+credentials/
+# Gerado por `eas credentials` > Download — contém as SENHAS da keystore
+credentials.json

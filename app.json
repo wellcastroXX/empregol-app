@@ -50,6 +50,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "18fdc8a7-456d-4416-af04-4fd6c263293e"
+      }
+    },
+    "owner": "wellcastrox"
   }
 }
