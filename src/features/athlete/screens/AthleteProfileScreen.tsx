@@ -11,7 +11,7 @@ import { conversationsApi } from '@/services/api/conversations-api';
 import { mediaApi } from '@/services/api/media-api';
 import { toMediaItems } from '@/services/api/mappers';
 import { profileService } from '@/services';
-import { colors, palette, spacing } from '@/theme';
+import { colors, palette, radii, spacing } from '@/theme';
 import { POSITIONS } from '@/constants/positions';
 import type { AthleteMediaItem, AthleteProfile } from '@/types';
 import {
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   starBtn: {
     width: 52,
     height: 52,
-    borderRadius: 4,
+    borderRadius: radii.sm,
     borderWidth: 1.5,
     borderColor: palette.giz64,
     alignItems: 'center',

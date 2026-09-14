@@ -10,6 +10,9 @@
       "environment": "development",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "preview": {
@@ -33,6 +36,12 @@
         "serviceAccountKeyPath": "./credentials/google-service-account.json",
         "track": "internal",
         "releaseStatus": "draft"
+      },
+      "ios": {
+        "ascAppId": "6808006725",
+        "ascApiKeyPath": "./secrets/AuthKey_JT5TRA68ZG.p8",
+        "ascApiKeyId": "JT5TRA68ZG",
+        "ascApiKeyIssuerId": "9a268f77-2734-493b-a3dd-14cacbe334ce"
       }
     }
   }

@@ -8,9 +8,12 @@
     "scheme": "empregolapp",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "com.empregolapp",
+      "bundleIdentifier": "com.empregol",
       "usesAppleSignIn": true,
-      "googleServicesFile": "./firebase/GoogleService-Info.plist"
+      "googleServicesFile": "./firebase/GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.empregolapp",
@@ -19,7 +22,10 @@
         "backgroundColor": "#1F7A3D",
         "foregroundImage": "./assets/images/icon-empregol-fg.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -45,7 +51,8 @@
           "cameraPermission": "O Empregol usa a câmera para você gravar jogadas e fotos para a vitrine.",
           "microphonePermission": "O Empregol usa o microfone ao gravar vídeos das suas jogadas."
         }
-      ]
+      ],
+      "./plugins/withExplicitModulesDisabled"
     ],
     "experiments": {
       "typedRoutes": true,

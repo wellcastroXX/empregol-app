@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   },
   frame: {
     width: "100%",
-    borderRadius: 14,
+    borderRadius: radii.lg,
     backgroundColor: palette.tinta,
     overflow: "hidden",
     justifyContent: "center",

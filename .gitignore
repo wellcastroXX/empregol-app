@@ -30,7 +30,10 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (contêm segredos — NUNCA commitar)
+.env
+.env.*
+!.env.example
 .env*.local
 
 # typescript
@@ -57,3 +60,6 @@ firebase/*adminsdk*.json
 credentials/
 # Gerado por `eas credentials` > Download — contém as SENHAS da keystore
 credentials.json
+
+# Chave .p8 da App Store Connect API (usada pelo `eas submit` iOS)
+secrets/

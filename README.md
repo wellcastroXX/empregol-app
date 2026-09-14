@@ -78,6 +78,58 @@ Alternativa gerenciada (recomendada para distribuição): **EAS Build**
 
 ---
 
+## Rodar no iOS (macOS)
+
+Mesma lógica do Android: **CNG** — a pasta `ios/` não é versionada, é gerada pelo
+`prebuild`. Requer **macOS** com **Xcode** + **CocoaPods** instalados e **Node ≥ 20.19.4**
+(use `nvm use 22.5.1`).
+
+```bash
+nvm use 22.5.1            # Node >= 20.19.4 (o build iOS falha em versões antigas)
+npx expo run:ios         # gera ios/, compila e abre no Simulador
+npx expo run:ios --device   # em iPhone físico conectado
+```
+
+Depois de instalado, para só reconectar ao Metro sem recompilar:
+
+```bash
+npx expo start --dev-client   # então toque no ícone do app no simulador (ou tecle "i")
+```
+
+### Erro `SwiftGeneratePch ... modulemap not found` (EXConstants / ExpoAsset)
+
+É cache/ordem de build do CocoaPods + DerivedData sujo — **não é erro do código**.
+Limpe tudo, reinstale os Pods e recompile:
+
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/Empregol-*
+rm -rf ios/build
+cd ios && rm -rf Pods Podfile.lock && pod install --repo-update && cd ..
+npx expo run:ios
+```
+
+Se persistir, regenere a pasta nativa do zero (ela é descartável):
+
+```bash
+rm -rf ios && npx expo prebuild -p ios --clean && npx expo run:ios
+```
+
+> **Auto-launch falhou com `openurl ... code 115`?** O build passou — o Expo só não
+> conseguiu abrir o app via deep link (ele escolhe o scheme do Google Sign-In por engano).
+> Basta **tocar no ícone do app** no simulador; ele conecta ao Metro normalmente.
+> Para evitar: `npx expo run:ios --scheme empregolapp`.
+
+### IPA para a App Store
+
+Distribuição é via **EAS Build** (gera na nuvem, não precisa da pasta local):
+
+```bash
+eas build -p ios --profile preview       # build interno / TestFlight
+eas build -p ios --profile production     # loja
+```
+
+---
+
 ## Estrutura
 
 ```

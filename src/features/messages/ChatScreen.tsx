@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
 
-  bubble: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: 10 },
+  bubble: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md },
   bubbleOwn: { backgroundColor: colors.fg, borderBottomRightRadius: 2 },
   bubbleOther: {
     backgroundColor: colors.bgElev,
