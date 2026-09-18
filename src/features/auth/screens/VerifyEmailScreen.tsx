@@ -1,12 +1,12 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Banner, Button, Text } from '@/components/ui';
-import { useAuth } from '@/context/AuthContext';
-import { AuthError } from '@/services';
-import { colors, fontFamily, palette, radii, spacing } from '@/theme';
+import { Banner, Button, Text } from "@/components/ui";
+import { useAuth } from "@/context/AuthContext";
+import { AuthError } from "@/services";
+import { colors, fontFamily, palette, radii, spacing } from "@/theme";
 
 const CODE_LEN = 6;
 
@@ -15,7 +15,7 @@ export function VerifyEmailScreen() {
   const router = useRouter();
   const { pendingEmail, verifyEmail, resendCode } = useAuth();
   const inputRef = useRef<TextInput>(null);
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
@@ -29,7 +29,7 @@ export function VerifyEmailScreen() {
 
   const handleConfirm = async () => {
     if (code.length < CODE_LEN) {
-      setError('Digite o código de 6 dígitos.');
+      setError("Digite o código de 6 dígitos.");
       return;
     }
     setError(null);
@@ -38,7 +38,11 @@ export function VerifyEmailScreen() {
       await verifyEmail(code);
       // Auto-login on success → the (auth) layout redirects into the app.
     } catch (e) {
-      setError(e instanceof AuthError ? e.message : 'Não foi possível verificar. Tente de novo.');
+      setError(
+        e instanceof AuthError
+          ? e.message
+          : "Não foi possível verificar. Tente de novo.",
+      );
     } finally {
       setLoading(false);
     }
@@ -51,18 +55,24 @@ export function VerifyEmailScreen() {
       setResent(true);
       setSeconds(42);
     } catch (e) {
-      setError(e instanceof AuthError ? e.message : 'Não foi possível reenviar.');
+      setError(
+        e instanceof AuthError ? e.message : "Não foi possível reenviar.",
+      );
     }
   };
 
-  const digits = Array.from({ length: CODE_LEN }, (_, i) => code[i] ?? '·');
-  const timer = `0:${String(seconds).padStart(2, '0')}`;
+  const digits = Array.from({ length: CODE_LEN }, (_, i) => code[i] ?? "·");
+  const timer = `0:${String(seconds).padStart(2, "0")}`;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <Pressable hitSlop={8} onPress={() => router.back()} accessibilityRole="button">
+          <Pressable
+            hitSlop={8}
+            onPress={() => router.back()}
+            accessibilityRole="button"
+          >
             <Text variant="monoLabel" color={colors.fg}>
               ‹ VOLTAR
             </Text>
@@ -77,31 +87,42 @@ export function VerifyEmailScreen() {
             V E R I F I C A Ç Ã O · E - M A I L
           </Text>
           <Text variant="displaySm" color={colors.fg}>
-            Confirma{'\n'}que é você
+            Confirme seu{"\n"}e-mail
             <Text variant="displaySm" color={colors.accent}>
               .
             </Text>
           </Text>
           <Text variant="sm" color={colors.fgMuted}>
-            Mandamos um código de 6 dígitos pra{' '}
+            Mandamos um código de 6 dígitos pra{" "}
             <Text variant="smMedium" color={colors.fg}>
-              {pendingEmail ?? 'seu e-mail'}
+              {pendingEmail ?? "seu e-mail"}
             </Text>
             .
           </Text>
         </View>
 
         {!!error && <Banner tone="danger" message={error} />}
-        {resent && !error && <Banner tone="success" message="Código reenviado para seu e-mail." />}
+        {resent && !error && (
+          <Banner tone="success" message="Código reenviado para seu e-mail." />
+        )}
 
         {/* Code input */}
         <View>
-          <Pressable style={styles.codeRow} onPress={() => inputRef.current?.focus()}>
+          <Pressable
+            style={styles.codeRow}
+            onPress={() => inputRef.current?.focus()}
+          >
             {digits.map((d, i) => {
-              const filled = d !== '·';
+              const filled = d !== "·";
               return (
-                <View key={i} style={[styles.codeBox, filled && styles.codeBoxFilled]}>
-                  <Text style={styles.codeDigit} color={filled ? palette.tinta : colors.fgMuted}>
+                <View
+                  key={i}
+                  style={[styles.codeBox, filled && styles.codeBoxFilled]}
+                >
+                  <Text
+                    style={styles.codeDigit}
+                    color={filled ? palette.tinta : colors.fgMuted}
+                  >
                     {d}
                   </Text>
                 </View>
@@ -114,7 +135,7 @@ export function VerifyEmailScreen() {
             keyboardType="number-pad"
             maxLength={CODE_LEN}
             value={code}
-            onChangeText={(v) => setCode(v.replace(/\D/g, ''))}
+            onChangeText={(v) => setCode(v.replace(/\D/g, ""))}
             autoFocus
           />
           <View style={styles.codeMeta}>
@@ -123,7 +144,11 @@ export function VerifyEmailScreen() {
                 REENVIAR EM {timer}
               </Text>
             ) : (
-              <Pressable hitSlop={8} onPress={handleResend} accessibilityRole="button">
+              <Pressable
+                hitSlop={8}
+                onPress={handleResend}
+                accessibilityRole="button"
+              >
                 <Text variant="monoLabel" color={colors.fg}>
                   REENVIAR ›
                 </Text>
@@ -133,7 +158,13 @@ export function VerifyEmailScreen() {
         </View>
 
         <View style={styles.bottom}>
-          <Button label="CONFIRMAR" chevron fullWidth loading={loading} onPress={handleConfirm} />
+          <Button
+            label="CONFIRMAR"
+            chevron
+            fullWidth
+            loading={loading}
+            onPress={handleConfirm}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -147,20 +178,20 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: spacing['2xl'],
-    gap: spacing['2xl'],
+    padding: spacing["2xl"],
+    gap: spacing["2xl"],
   },
   topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   head: {
     gap: spacing.md,
   },
   codeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: spacing.sm,
   },
   codeBox: {
@@ -170,8 +201,8 @@ const styles = StyleSheet.create({
     backgroundColor: palette.giz,
     borderWidth: 1.5,
     borderColor: palette.osso,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   codeBoxFilled: {
     borderColor: palette.tinta,
@@ -181,18 +212,18 @@ const styles = StyleSheet.create({
     fontSize: 26,
   },
   hiddenInput: {
-    position: 'absolute',
+    position: "absolute",
     opacity: 0,
     height: 1,
     width: 1,
   },
   codeMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: spacing.md,
   },
   bottom: {
-    marginTop: 'auto',
+    marginTop: "auto",
   },
 });
