@@ -79,7 +79,10 @@ export interface AthleteProfile extends BaseUser {
   idade: number;
   naturalidade: string;
   genero: Genero;
+  /** Posição principal (1ª selecionada). */
   posicao: Position;
+  /** Todas as posições em que atua (até 3, inclui a principal). */
+  posicoes?: Position[];
   peDominante: DominantFoot;
   alturaCm: number;
   pesoKg: number;

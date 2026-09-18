@@ -48,10 +48,20 @@ function positionFromApi(short: string): Position {
   return POSITIONS.find((p) => p.short === short)?.value ?? POSITIONS[0].value;
 }
 
+/** Todas as posições (até 3); cai na principal quando o back não manda o array. */
+function positionsFromApi(list: string[] | null | undefined, primary: string): Position[] {
+  const src = list?.length ? list : [primary];
+  return src.map(positionFromApi);
+}
+
 /* ── Sign-up payload → API request body ─────────────────────────────────────── */
 
+const positionShort = (pos: Position) =>
+  POSITIONS.find((p) => p.value === pos)?.short ?? pos;
+
 export function toAthleteRegisterBody(p: Extract<SignUpPayload, { role: 'athlete' }>) {
-  const short = POSITIONS.find((pos) => pos.value === p.posicao)?.short ?? p.posicao;
+  // Até 3 posições (short codes). A 1ª é a principal; garante ao menos a principal.
+  const positions = (p.posicoes?.length ? p.posicoes : [p.posicao]).map(positionShort);
   return {
     email: p.email,
     password: p.senha,
@@ -61,7 +71,8 @@ export function toAthleteRegisterBody(p: Extract<SignUpPayload, { role: 'athlete
     phone: unmask(p.telefone),
     naturalidade: p.naturalidade,
     gender: GENDER_TO_API[p.genero],
-    position: short,
+    position: positions[0],
+    positions,
     dominantFoot: FOOT_TO_API[p.peDominante],
     height: p.alturaCm,
     weight: p.pesoKg,
@@ -105,6 +116,7 @@ interface ApiAthlete {
   gender?: string | null;
   phone: string;
   position: string;
+  positions?: string[] | null;
   dominantFoot: string;
   height: number;
   weight: number;
@@ -165,6 +177,7 @@ function toAthleteProfile(user: ApiUser, a: ApiAthlete): AthleteProfile {
     naturalidade: a.naturalidade,
     genero: GENDER_FROM_API[a.gender ?? ''] ?? 'masculino',
     posicao: positionFromApi(a.position),
+    posicoes: positionsFromApi(a.positions, a.position),
     peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
     alturaCm: a.height,
     pesoKg: a.weight,
@@ -218,6 +231,7 @@ export function toAthleteMePatch(a: ApiAthlete): Partial<AthleteProfile> {
     idade: ageFromBirthdate(a.birthDate),
     naturalidade: a.naturalidade,
     posicao: positionFromApi(a.position),
+    posicoes: positionsFromApi(a.positions, a.position),
     peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
     alturaCm: a.height,
     pesoKg: a.weight,
@@ -315,6 +329,7 @@ export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
     naturalidade: a.naturalidade ?? '',
     genero: GENDER_FROM_API[a.gender ?? ''] ?? 'masculino',
     posicao: positionFromApi(a.position),
+    posicoes: positionsFromApi(a.positions, a.position),
     peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
     alturaCm: a.height,
     pesoKg: a.weight,

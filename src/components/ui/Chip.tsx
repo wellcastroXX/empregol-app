@@ -11,12 +11,14 @@ export type ChipProps = {
   size?: ChipSize;
   /** Dark canvas variant (contractor env): light fill when active, cream outline when not. */
   dark?: boolean;
+  /** Dimmed + non-interactive (e.g. multi-select at its cap). */
+  disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 };
 
 /** Filter chip — mono ALL CAPS. Active = ink fill; inactive = osso outline. */
-export function Chip({ label, selected, size = 'sm', dark, onPress, style }: ChipProps) {
+export function Chip({ label, selected, size = 'sm', dark, disabled, onPress, style }: ChipProps) {
   const variant = dark
     ? selected
       ? styles.selectedDark
@@ -34,8 +36,10 @@ export function Chip({ label, selected, size = 'sm', dark, onPress, style }: Chi
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={[styles.chip, size === 'lg' && styles.lg, variant, style]}>
+      style={[styles.chip, size === 'lg' && styles.lg, variant, disabled && styles.disabled, style]}>
       <Text style={styles.label} numberOfLines={1} color={fg}>
         {label}
       </Text>
@@ -71,6 +75,9 @@ const styles = StyleSheet.create({
   unselectedDark: {
     backgroundColor: 'transparent',
     borderColor: palette.cinzaOnDark,
+  },
+  disabled: {
+    opacity: 0.4,
   },
   label: {
     fontFamily: fontFamily.monoMedium,
