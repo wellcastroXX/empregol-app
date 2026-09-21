@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Banner, Button, Text } from "@/components/ui";
@@ -27,15 +27,16 @@ export function VerifyEmailScreen() {
     return () => clearInterval(id);
   }, [seconds]);
 
-  const handleConfirm = async () => {
-    if (code.length < CODE_LEN) {
+  const submitCode = async (value: string) => {
+    if (loading) return; // evita envio duplo (auto-submit + botão)
+    if (value.length < CODE_LEN) {
       setError("Digite o código de 6 dígitos.");
       return;
     }
     setError(null);
     setLoading(true);
     try {
-      await verifyEmail(code);
+      await verifyEmail(value);
       // Auto-login on success → the (auth) layout redirects into the app.
     } catch (e) {
       setError(
@@ -45,6 +46,18 @@ export function VerifyEmailScreen() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirm = () => submitCode(code);
+
+  // Ao completar os 6 dígitos: fecha o teclado e valida automaticamente.
+  const onChangeCode = (raw: string) => {
+    const next = raw.replace(/\D/g, "").slice(0, CODE_LEN);
+    setCode(next);
+    if (next.length === CODE_LEN) {
+      Keyboard.dismiss();
+      submitCode(next);
     }
   };
 
@@ -135,7 +148,8 @@ export function VerifyEmailScreen() {
             keyboardType="number-pad"
             maxLength={CODE_LEN}
             value={code}
-            onChangeText={(v) => setCode(v.replace(/\D/g, ""))}
+            onChangeText={onChangeCode}
+            returnKeyType="done"
             autoFocus
           />
           <View style={styles.codeMeta}>
@@ -210,6 +224,9 @@ const styles = StyleSheet.create({
   codeDigit: {
     fontFamily: fontFamily.monoMedium,
     fontSize: 26,
+    lineHeight: 30, // >= fontSize, senão o variant padrão corta o dígito
+    includeFontPadding: false, // Android: remove padding extra da fonte
+    textAlignVertical: "center",
   },
   hiddenInput: {
     position: "absolute",
