@@ -15,7 +15,7 @@ import {
   Switch,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { captureRef } from "react-native-view-shot";
 
 import { Text } from "@/components/ui";
@@ -61,6 +61,7 @@ export type ShareProfileSheetProps = {
  * (via view-shot); WhatsApp/X/LinkedIn abrem o app com o link.
  */
 export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileSheetProps) {
+  const insets = useSafeAreaInsets();
   const cardRef = useRef<View>(null);
   const [busy, setBusy] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
@@ -140,11 +141,20 @@ export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileShe
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        <StatusBar style="dark" />
-        {/* Header */}
-        <View style={styles.header}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <StatusBar style="light" />
+      <View style={styles.backdrop}>
+        <Pressable style={styles.backdropTap} onPress={onClose} accessibilityLabel="Fechar" />
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
+          <View style={styles.handle} />
+          {/* Header */}
+          <View style={styles.header}>
           <Pressable hitSlop={10} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fechar">
             <Feather name="x" size={24} color={colors.fg} />
           </Pressable>
@@ -156,7 +166,11 @@ export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileShe
           </Pressable>
         </View>
 
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.body}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Card */}
           <View style={styles.cardWrap}>
             <AthleteShareCard ref={cardRef} athlete={athlete} />
@@ -219,18 +233,37 @@ export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileShe
           </View>
         </ScrollView>
 
-        {busy && (
-          <View style={styles.busy} pointerEvents="none">
-            <ActivityIndicator color={colors.accent} />
-          </View>
-        )}
-      </SafeAreaView>
+          {busy && (
+            <View style={styles.busy} pointerEvents="none">
+              <ActivityIndicator color={colors.accent} />
+            </View>
+          )}
+        </View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  backdrop: { flex: 1, backgroundColor: "rgba(20,20,19,0.5)", justifyContent: "flex-end" },
+  backdropTap: { flex: 1 },
+  sheet: {
+    maxHeight: "92%",
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+    paddingTop: spacing.sm,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.rule,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  scroll: { flexShrink: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -245,7 +278,7 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   cardWrap: {
-    width: "72%",
+    width: "62%",
     alignSelf: "center",
   },
   sectionLabel: { marginBottom: -spacing.sm },
@@ -297,5 +330,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(242,239,232,0.5)",
     alignItems: "center",
     justifyContent: "center",
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
   },
 });
