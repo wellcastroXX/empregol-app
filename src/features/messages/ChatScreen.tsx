@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StatusBar } from 'expo-status-bar';
 import { io, type Socket } from 'socket.io-client';
@@ -46,6 +46,7 @@ export function ChatScreen() {
     subtitle,
   } = useLocalSearchParams<{ id: string; name?: string; subtitle?: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, session } = useAuth();
 
   const [messages, setMessages] = useState<ApiMessage[]>([]);
@@ -54,14 +55,33 @@ export function ChatScreen() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [draft, setDraft] = useState('');
-  const [sending, setSending] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const socketRef = useRef<Socket | null>(null);
 
-  /** Adiciona uma mensagem evitando duplicar (id já presente). */
-  const pushMessage = useCallback((msg: ApiMessage) => {
-    setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [msg, ...prev]));
-  }, []);
+  /**
+   * Adiciona uma mensagem evitando duplicar. Se for a própria mensagem chegando
+   * (echo do socket ou resposta REST), remove o "otimista" temporário de mesmo
+   * conteúdo — assim a mensagem aparece na hora e é reconciliada com a real.
+   */
+  const receiveMessage = useCallback(
+    (msg: ApiMessage) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        let base = prev;
+        if (msg.senderUserId === user?.id) {
+          const i = base.findIndex(
+            (m) =>
+              m.id.startsWith('temp:') &&
+              m.senderUserId === user?.id &&
+              m.content === msg.content,
+          );
+          if (i !== -1) base = base.filter((_, idx) => idx !== i);
+        }
+        return [msg, ...base];
+      });
+    },
+    [user?.id],
+  );
 
   // Tema por papel: agente/clube vê o chat dark; atleta vê claro.
   const dark = user?.role === 'contractor';
@@ -114,9 +134,11 @@ export function ChatScreen() {
   // Tempo real: conecta no socket, entra na sala e ouve novas mensagens.
   useEffect(() => {
     if (!conversationId || !session?.accessToken) return;
+    // Sem forçar 'websocket': deixa o socket.io negociar (polling → upgrade),
+    // senão a conexão quebra atrás do túnel Cloudflare/Traefik (WS-only falha).
     const socket = io(env.apiUrl, {
       auth: { token: session.accessToken },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
     });
     socketRef.current = socket;
 
@@ -124,16 +146,20 @@ export function ChatScreen() {
       socket.emit('conversation:join', conversationId);
       socket.emit('message:read', conversationId);
     });
+    socket.on('connect_error', (err) => {
+      if (__DEV__) console.warn('[chat] socket connect_error:', err.message);
+    });
     socket.on('message:new', (msg: ApiMessage) => {
-      if (msg.conversationId === conversationId) pushMessage(msg);
+      if (msg.conversationId === conversationId) receiveMessage(msg);
     });
 
     return () => {
       socket.off('message:new');
+      socket.off('connect_error');
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [conversationId, session?.accessToken, pushMessage]);
+  }, [conversationId, session?.accessToken, receiveMessage]);
 
   const loadOlder = useCallback(() => {
     if (!hasMore || loadingMore || !cursor) return;
@@ -143,26 +169,40 @@ export function ChatScreen() {
 
   const send = useCallback(async () => {
     const content = draft.trim();
-    if (!content || sending || !conversationId) return;
+    if (!content || !conversationId || !user?.id) return;
     setDraft('');
+
+    // Render otimista: a mensagem aparece na hora com um id temporário. Quando a
+    // versão real chega (echo do socket ou resposta REST), `receiveMessage`
+    // reconcilia trocando o temporário pelo real.
+    const optimistic: ApiMessage = {
+      id: `temp:${Date.now()}`,
+      conversationId,
+      senderUserId: user.id,
+      type: 'TEXT',
+      content,
+      audioUrl: null,
+      proposalId: null,
+      readAt: null,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [optimistic, ...prev]);
+
     const socket = socketRef.current;
-    // Via socket: o servidor faz broadcast `message:new` p/ a sala (real-time
-    // nos dois lados). A própria mensagem volta pelo listener e é adicionada.
     if (socket?.connected) {
+      // Servidor faz broadcast `message:new` p/ a sala (real-time nos dois lados).
       socket.emit('message:send', { conversationId, type: 'TEXT', content });
       return;
     }
-    // Fallback REST (offline do socket).
-    setSending(true);
+    // Fallback REST (socket offline): a resposta traz a mensagem real.
     try {
       const msg = await conversationsApi.sendMessage(conversationId, content);
-      pushMessage(msg);
+      receiveMessage(msg);
     } catch {
-      setDraft(content);
-    } finally {
-      setSending(false);
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      setDraft(content); // devolve o texto pro input
     }
-  }, [draft, sending, conversationId, pushMessage]);
+  }, [draft, conversationId, user?.id, receiveMessage]);
 
   // data is newest-first (inverted list); the visually-previous bubble is messages[index+1].
   const renderMessage = useCallback(
@@ -307,7 +347,11 @@ export function ChatScreen() {
         )}
 
         {/* Composer */}
-        <View style={[styles.composer, { borderTopColor: t.rule, backgroundColor: t.bg }]}>
+        <View
+          style={[
+            styles.composer,
+            { borderTopColor: t.rule, backgroundColor: t.bg, paddingBottom: insets.bottom + spacing.md },
+          ]}>
           <Pressable
             style={[styles.plusBtn, { backgroundColor: t.elev, borderColor: t.rule }]}
             accessibilityRole="button"
@@ -321,21 +365,18 @@ export function ChatScreen() {
             onChangeText={setDraft}
             placeholder="Escreve uma mensagem..."
             placeholderTextColor={t.muted}
-            multiline
             maxLength={2000}
-            returnKeyType="default"
+            returnKeyType="send"
+            blurOnSubmit={false}
+            onSubmitEditing={send}
           />
           <Pressable
-            style={[styles.sendBtn, { backgroundColor: t.sendBg }, (!draft.trim() || sending) && styles.sendBtnDisabled]}
+            style={[styles.sendBtn, { backgroundColor: t.sendBg }, !draft.trim() && styles.sendBtnDisabled]}
             onPress={send}
-            disabled={!draft.trim() || sending}
+            disabled={!draft.trim()}
             accessibilityRole="button"
             accessibilityLabel="Enviar">
-            {sending ? (
-              <ActivityIndicator size={16} color={palette.giz} />
-            ) : (
-              <Feather name="chevron-right" size={20} color={palette.giz} />
-            )}
+            <Feather name="chevron-right" size={20} color={palette.giz} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
