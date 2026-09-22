@@ -8,6 +8,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, EmptyState, Text } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { conversationsApi } from '@/services/api/conversations-api';
+import { AvatarSheet } from '@/features/profile/AvatarSheet';
 import { mediaApi } from '@/services/api/media-api';
 import { toMediaItems } from '@/services/api/mappers';
 import { profileService } from '@/services';
@@ -61,6 +62,7 @@ export function AthleteProfileScreen({
   const [loading, setLoading] = useState(!provided);
   const [chatLoading, setChatLoading] = useState(false);
   const [ownMedia, setOwnMedia] = useState<AthleteMediaItem[]>([]);
+  const [avatarSheet, setAvatarSheet] = useState(false);
 
   // Perfil próprio: reflete atualizações do usuário (ex.: após publicar mídia).
   useEffect(() => {
@@ -151,7 +153,7 @@ export function AthleteProfileScreen({
           <OwnAthleteHeader
             athlete={athlete}
             insetsTop={insets.top}
-            onUpdatePhoto={() => Alert.alert('Em breve', 'Atualização de foto disponível em breve.')}
+            onUpdatePhoto={() => setAvatarSheet(true)}
             onUpdateData={() => router.push('/meus-dados')}
             onShare={() => Share.share({ message: `Confira o perfil de ${athlete.nome} no Empregol.` })}
           />
@@ -172,6 +174,12 @@ export function AthleteProfileScreen({
             </Pressable>
           </View>
         </ScrollView>
+
+        <AvatarSheet
+          visible={avatarSheet}
+          onClose={() => setAvatarSheet(false)}
+          hasPhoto={!!athlete.fotoUrl}
+        />
       </View>
     );
   }

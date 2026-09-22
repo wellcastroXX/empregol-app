@@ -95,4 +95,9 @@ export const mediaApi = {
     });
     return res.data;
   },
+
+  /** Remove a foto do usuário → PUT /athletes/me (avatarUrl: null). */
+  async removeAvatar(): Promise<void> {
+    await apiRequest('/athletes/me', { method: 'PUT', body: { avatarUrl: null } });
+  },
 };
