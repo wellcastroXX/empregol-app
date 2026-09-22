@@ -2,13 +2,14 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, EmptyState, Text } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { conversationsApi } from '@/services/api/conversations-api';
 import { AvatarSheet } from '@/features/profile/AvatarSheet';
+import { ShareProfileSheet } from '../components/ShareProfileSheet';
 import { mediaApi } from '@/services/api/media-api';
 import { toMediaItems } from '@/services/api/mappers';
 import { profileService } from '@/services';
@@ -63,6 +64,7 @@ export function AthleteProfileScreen({
   const [chatLoading, setChatLoading] = useState(false);
   const [ownMedia, setOwnMedia] = useState<AthleteMediaItem[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
+  const [shareSheet, setShareSheet] = useState(false);
 
   // Perfil próprio: reflete atualizações do usuário (ex.: após publicar mídia).
   useEffect(() => {
@@ -155,7 +157,7 @@ export function AthleteProfileScreen({
             insetsTop={insets.top}
             onUpdatePhoto={() => setAvatarSheet(true)}
             onUpdateData={() => router.push('/meus-dados')}
-            onShare={() => Share.share({ message: `Confira o perfil de ${athlete.nome} no Empregol.` })}
+            onShare={() => setShareSheet(true)}
           />
 
           <View style={styles.ownBody}>
@@ -179,6 +181,11 @@ export function AthleteProfileScreen({
           visible={avatarSheet}
           onClose={() => setAvatarSheet(false)}
           hasPhoto={!!athlete.fotoUrl}
+        />
+        <ShareProfileSheet
+          visible={shareSheet}
+          onClose={() => setShareSheet(false)}
+          athlete={athlete}
         />
       </View>
     );

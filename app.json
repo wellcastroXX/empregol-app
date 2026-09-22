@@ -52,6 +52,15 @@
           "microphonePermission": "O Empregol usa o microfone ao gravar vídeos das suas jogadas."
         }
       ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "O Empregol salva o card do seu perfil na sua galeria para você compartilhar.",
+          "savePhotosPermission": "O Empregol salva o card do seu perfil na sua galeria para você compartilhar.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      "expo-sharing",
       "./plugins/withExplicitModulesDisabled"
     ],
     "experiments": {
