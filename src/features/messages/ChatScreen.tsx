@@ -161,6 +161,22 @@ export function ChatScreen() {
     };
   }, [conversationId, session?.accessToken, receiveMessage]);
 
+  // Garantia de "quase tempo real": enquanto a tela está aberta, revalida as
+  // mensagens recentes e mescla as novas (dedup por id). Cobre o caso do socket
+  // não entregar — a recebida aparece sem precisar sair e voltar.
+  useEffect(() => {
+    if (!conversationId) return;
+    const timer = setInterval(async () => {
+      try {
+        const res = await conversationsApi.getMessages(conversationId);
+        [...res.data].reverse().forEach(receiveMessage);
+      } catch {
+        // silencioso — próxima iteração tenta de novo
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [conversationId, receiveMessage]);
+
   const loadOlder = useCallback(() => {
     if (!hasMore || loadingMore || !cursor) return;
     setLoadingMore(true);
