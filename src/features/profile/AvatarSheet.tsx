@@ -20,6 +20,10 @@ export type AvatarSheetProps = {
   onClose: () => void;
   /** Mostra a opção "Remover foto atual" só quando já existe foto. */
   hasPhoto?: boolean;
+  /** Sucesso: nova foto (ou undefined ao remover) — o pai reflete no header + toast. */
+  onSuccess?: (fotoUrl?: string) => void;
+  /** Falha no upload/remoção — o pai mostra o toast de erro. */
+  onError?: (message: string) => void;
 };
 
 type Source = "camera" | "library" | "selfie";
@@ -29,7 +33,7 @@ type Source = "camera" | "library" | "selfie";
  * a pasta de avatares no servidor (mesma pipeline das mídias) e refletem na
  * sessão via `updateUser`. "Remover" volta pro número da camisa (avatar nulo).
  */
-export function AvatarSheet({ visible, onClose, hasPhoto }: AvatarSheetProps) {
+export function AvatarSheet({ visible, onClose, hasPhoto, onSuccess, onError }: AvatarSheetProps) {
   const { updateUser } = useAuth();
   const [busy, setBusy] = useState(false);
 
@@ -75,9 +79,10 @@ export function AvatarSheet({ visible, onClose, hasPhoto }: AvatarSheetProps) {
         mimeType: a.mimeType ?? "image/jpeg",
       });
       await updateUser({ fotoUrl: avatarUrl });
+      onSuccess?.(avatarUrl);
       onClose();
     } catch {
-      Alert.alert("Ops", "Não foi possível atualizar a foto. Tente de novo.");
+      onError?.("Não foi possível atualizar a foto. Tente de novo.");
     } finally {
       setBusy(false);
     }
@@ -89,9 +94,10 @@ export function AvatarSheet({ visible, onClose, hasPhoto }: AvatarSheetProps) {
     try {
       await mediaApi.removeAvatar();
       await updateUser({ fotoUrl: undefined });
+      onSuccess?.(undefined);
       onClose();
     } catch {
-      Alert.alert("Ops", "Não foi possível remover a foto.");
+      onError?.("Não foi possível remover a foto.");
     } finally {
       setBusy(false);
     }

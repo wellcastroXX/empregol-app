@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -102,6 +103,26 @@ export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileShe
     await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: shareText });
   };
 
+  /**
+   * Abre o card direto no Story do Instagram (iOS): copia o PNG p/ o pasteboard
+   * e abre `instagram-stories://share`, que usa a imagem como fundo do story.
+   * Se não der (Android ou IG ausente), cai no share sheet do sistema.
+   */
+  const shareToInstagramStory = async () => {
+    const igUrl = "instagram-stories://share?source_application=com.empregol";
+    try {
+      if (Platform.OS === "ios" && (await Linking.canOpenURL(igUrl))) {
+        const base64 = await captureRef(cardRef, { format: "png", quality: 1, result: "base64" });
+        await Clipboard.setImageAsync(base64);
+        await Linking.openURL(igUrl);
+        return;
+      }
+    } catch {
+      // cai no fallback abaixo
+    }
+    await shareImage();
+  };
+
   const openApp = async (url: string) => {
     const ok = await Linking.canOpenURL(url).catch(() => false);
     if (ok) return Linking.openURL(url);
@@ -116,7 +137,7 @@ export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileShe
       const text = encodeURIComponent(`${shareText} ${fullLink}`);
       switch (key) {
         case "instagram":
-          await shareImage();
+          await shareToInstagramStory();
           break;
         case "whatsapp":
           await openApp(`whatsapp://send?text=${text}`);

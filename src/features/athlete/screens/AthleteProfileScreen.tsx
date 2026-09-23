@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, EmptyState, Text } from '@/components/ui';
+import { Button, EmptyState, Text, Toast } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { conversationsApi } from '@/services/api/conversations-api';
 import { AvatarSheet } from '@/features/profile/AvatarSheet';
@@ -65,6 +65,7 @@ export function AthleteProfileScreen({
   const [ownMedia, setOwnMedia] = useState<AthleteMediaItem[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [shareSheet, setShareSheet] = useState(false);
+  const [toast, setToast] = useState<{ message: string; tone: 'success' | 'danger' } | null>(null);
 
   // Perfil próprio: reflete atualizações do usuário (ex.: após publicar mídia).
   useEffect(() => {
@@ -181,11 +182,21 @@ export function AthleteProfileScreen({
           visible={avatarSheet}
           onClose={() => setAvatarSheet(false)}
           hasPhoto={!!athlete.fotoUrl}
+          onSuccess={(fotoUrl) => {
+            setAthlete((prev) => (prev ? { ...prev, fotoUrl } : prev));
+            setToast({ message: fotoUrl ? 'Foto atualizada!' : 'Foto removida.', tone: 'success' });
+          }}
+          onError={(message) => setToast({ message, tone: 'danger' })}
         />
         <ShareProfileSheet
           visible={shareSheet}
           onClose={() => setShareSheet(false)}
           athlete={athlete}
+        />
+        <Toast
+          message={toast?.message ?? null}
+          tone={toast?.tone}
+          onHide={() => setToast(null)}
         />
       </View>
     );

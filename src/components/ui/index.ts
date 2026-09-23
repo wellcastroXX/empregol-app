@@ -12,6 +12,8 @@ export { Avatar } from './Avatar';
 export type { AvatarProps } from './Avatar';
 export { Tag } from './Tag';
 export type { TagProps, TagVariant } from './Tag';
+export { Toast } from './Toast';
+export type { ToastProps, ToastTone } from './Toast';
 export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
 export { ChipGroup } from './ChipGroup';
