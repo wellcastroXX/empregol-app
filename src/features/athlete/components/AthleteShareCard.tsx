@@ -49,9 +49,9 @@ export const AthleteShareCard = forwardRef<View, { athlete: AthleteProfile }>(
 
         {/* Topo */}
         <View style={styles.top}>
-          <Logo size={18} tone="creme" />
-          <Text style={styles.dotcom} color={palette.giz}>
-            EMPREGOL.COM
+          <Logo size={14} tone="creme" />
+          <Text style={styles.dotcom} color={palette.giz} numberOfLines={1}>
+            EMPREGOL.CO
           </Text>
         </View>
 
@@ -62,11 +62,23 @@ export const AthleteShareCard = forwardRef<View, { athlete: AthleteProfile }>(
               {String(athlete.numero).padStart(2, "0")}
             </Text>
           )}
-          <Text style={styles.name} color={palette.giz} numberOfLines={1}>
+          <Text
+            style={styles.name}
+            color={palette.giz}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.4}
+          >
             {athlete.nome}
           </Text>
           {!!meta && (
-            <Text style={styles.meta} color={palette.giz}>
+            <Text
+              style={styles.meta}
+              color={palette.giz}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+            >
               {meta}
             </Text>
           )}
@@ -102,14 +114,17 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 18,
     paddingTop: 18,
+    gap: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   dotcom: {
+    flexShrink: 1,
     fontFamily: fontFamily.monoMedium,
-    fontSize: 11,
-    letterSpacing: 2,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    textAlign: "right",
   },
   bottom: {
     position: "absolute",

@@ -68,7 +68,7 @@ export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileShe
   const [isPublic, setIsPublic] = useState(true);
 
   const slug = slugify(athlete.nome) || "atleta";
-  const shortLink = `empregol.com/p/${slug}`;
+  const shortLink = `empregol.co/p/${slug}`;
   const fullLink = `https://${shortLink}`;
   const shareText = `Confira o perfil de ${athlete.nome} no Empregol`;
 
