@@ -12,6 +12,7 @@ import {
   dashboardApi,
   type AthleteDashboard,
 } from "@/services/api/dashboard-api";
+import { athletesApi } from "@/services/api/athletes-api";
 import { mediaApi } from "@/services/api/media-api";
 import { colors, fontFamily, palette, radii, spacing } from "@/theme";
 import type { AthleteProfile } from "@/types";
@@ -388,7 +389,16 @@ export function MeusDadosScreen() {
           section={editing}
           athlete={athlete}
           onSave={(p) => {
-            updateUser(p);
+            updateUser(p); // reflete na hora (local)
+            // Persiste as posições no banco (short codes), mantendo a principal.
+            if (p.posicoes?.length) {
+              const positions = p.posicoes.map(
+                (v) => POSITIONS.find((pp) => pp.value === v)?.short ?? v,
+              );
+              athletesApi
+                .updateMe({ positions, position: positions[0] })
+                .catch(() => undefined);
+            }
             setEditing(null);
           }}
           onClose={() => setEditing(null)}

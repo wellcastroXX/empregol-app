@@ -46,7 +46,7 @@ type Draft = {
   disponibilidade: AvailabilityStatus;
   agenciamento: AgencyStatus;
   nivel: PlayerLevel;
-  posicao: Position;
+  posicoes: Position[]; // até 3, a 1ª é a principal
   peDominante: DominantFoot;
   numero: string;
   altura: string; // meters, e.g. "1.85"
@@ -63,7 +63,7 @@ function toDraft(a: AthleteProfile): Draft {
     disponibilidade: a.disponibilidade,
     agenciamento: a.agenciamento,
     nivel: a.nivel,
-    posicao: a.posicao,
+    posicoes: a.posicoes?.length ? a.posicoes : [a.posicao],
     peDominante: a.peDominante,
     numero: a.numero != null ? String(a.numero) : "",
     altura: a.alturaCm ? (a.alturaCm / 100).toFixed(2) : "",
@@ -85,6 +85,7 @@ const POSITION_CHIPS = POSITIONS.map((p) => ({
   value: p.value,
   label: p.short ?? p.label,
 }));
+const MAX_POSICOES = 3;
 
 export type MeusDadosEditModalProps = {
   visible: boolean;
@@ -115,6 +116,15 @@ export function MeusDadosEditModal({
 
   const patch = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
 
+  // Alterna uma posição (máx. 3). A 1ª selecionada é a principal.
+  const togglePosicao = (value: Position) =>
+    setDraft((d) => {
+      if (d.posicoes.includes(value))
+        return { ...d, posicoes: d.posicoes.filter((p) => p !== value) };
+      if (d.posicoes.length >= MAX_POSICOES) return d;
+      return { ...d, posicoes: [...d.posicoes, value] };
+    });
+
   const save = () => {
     switch (section) {
       case "status":
@@ -126,7 +136,8 @@ export function MeusDadosEditModal({
         break;
       case "posicao":
         onSave({
-          posicao: draft.posicao,
+          posicao: draft.posicoes[0],
+          posicoes: draft.posicoes,
           peDominante: draft.peDominante,
           numero: draft.numero ? int(draft.numero) : undefined,
           alturaCm: metersToCm(draft.altura),
@@ -221,10 +232,15 @@ export function MeusDadosEditModal({
             {section === "posicao" && (
               <>
                 <Group label="P O S I Ç Ã O">
+                  <Text variant="sm" color={colors.fgMuted}>
+                    Selecione até {MAX_POSICOES} · {draft.posicoes.length}/{MAX_POSICOES}
+                  </Text>
                   <ChipGroup
                     options={POSITION_CHIPS}
-                    value={draft.posicao}
-                    onChange={(v) => patch({ posicao: v })}
+                    multiple
+                    values={draft.posicoes}
+                    onToggle={togglePosicao}
+                    max={MAX_POSICOES}
                   />
                 </Group>
                 <Group label="P É · D O M I N A N T E">

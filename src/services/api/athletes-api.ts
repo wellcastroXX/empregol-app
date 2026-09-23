@@ -39,4 +39,8 @@ export const athletesApi = {
     const res = await apiRequest<{ status: string; data: ApiPublicAthlete }>(`/athletes/${id}/basic`);
     return res.data;
   },
+  /** Atualiza o próprio perfil (campos parciais já no formato da API) → PUT /athletes/me. */
+  async updateMe(body: Record<string, unknown>): Promise<void> {
+    await apiRequest('/athletes/me', { method: 'PUT', body });
+  },
 };
