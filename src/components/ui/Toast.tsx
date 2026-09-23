@@ -18,14 +18,14 @@ export type ToastProps = {
 /** Toast simples no topo — some sozinho. Reutilizável (feedback de ações). */
 export function Toast({ message, tone = "success", onHide, durationMs = 2600 }: ToastProps) {
   const insets = useSafeAreaInsets();
-  const y = useRef(new Animated.Value(-120)).current;
+  const y = useRef(new Animated.Value(160)).current;
 
   useEffect(() => {
     if (!message) return;
-    y.setValue(-120);
+    y.setValue(160);
     Animated.spring(y, { toValue: 0, useNativeDriver: true, bounciness: 6 }).start();
     const timer = setTimeout(() => {
-      Animated.timing(y, { toValue: -140, duration: 220, useNativeDriver: true }).start(onHide);
+      Animated.timing(y, { toValue: 180, duration: 220, useNativeDriver: true }).start(onHide);
     }, durationMs);
     return () => clearTimeout(timer);
   }, [message, durationMs, onHide, y]);
@@ -36,7 +36,7 @@ export function Toast({ message, tone = "success", onHide, durationMs = 2600 }: 
   return (
     <Animated.View
       pointerEvents="none"
-      style={[styles.wrap, { top: insets.top + spacing.sm, transform: [{ translateY: y }] }]}
+      style={[styles.wrap, { bottom: insets.bottom + spacing.lg, transform: [{ translateY: y }] }]}
     >
       <View style={[styles.toast, { backgroundColor: bg }]}>
         <Text style={styles.text} color={palette.giz}>
@@ -54,10 +54,9 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
     zIndex: 100,
-    paddingHorizontal: spacing.lg,
   },
   toast: {
-    maxWidth: "100%",
+    width: "88%",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radii.md,
