@@ -77,7 +77,7 @@ export const AthleteShareCard = forwardRef<View, { athlete: AthleteProfile }>(
               color={palette.giz}
               numberOfLines={2}
               adjustsFontSizeToFit
-              minimumFontScale={0.6}
+              minimumFontScale={0.85}
             >
               {meta}
             </Text>
@@ -148,8 +148,9 @@ const styles = StyleSheet.create({
   },
   meta: {
     fontFamily: fontFamily.monoMedium,
-    fontSize: 12,
-    letterSpacing: 1.6,
-    marginTop: 4,
+    fontSize: 14,
+    lineHeight: 19,
+    letterSpacing: 1.4,
+    marginTop: 5,
   },
 });
