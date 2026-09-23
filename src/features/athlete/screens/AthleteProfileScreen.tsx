@@ -162,7 +162,7 @@ export function AthleteProfileScreen({
           />
 
           <View style={styles.ownBody}>
-            <AthleteStats athlete={athlete} />
+            <AthleteStats athlete={athlete} onPressClube={() => router.push('/estatisticas')} />
             {showPersonalData && <PersonalDataSection athlete={athlete} />}
             <TrajetoriaSection entries={athlete.trajetoria} />
             <VideoThumbs

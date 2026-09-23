@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SectionHeader, Text } from '@/components/ui';
 import { colors, fontFamily, palette, radii, spacing } from '@/theme';
@@ -23,7 +24,18 @@ function StatCell({ value, label, fg, muted }: { value: string; label: string; f
 }
 
 /** Stat grid + clube atual — section "ESTATÍSTICAS · {ano}". */
-export function AthleteStats({ athlete, showClub = true, dark = false }: { athlete: AthleteProfile; showClub?: boolean; dark?: boolean }) {
+export function AthleteStats({
+  athlete,
+  showClub = true,
+  dark = false,
+  onPressClube,
+}: {
+  athlete: AthleteProfile;
+  showClub?: boolean;
+  dark?: boolean;
+  /** Quando presente, o card "Clube atual" vira botão (ex.: ir p/ Estatísticas). */
+  onPressClube?: () => void;
+}) {
   const s = athlete.stats;
   const has = !!s;
   const year = s?.ano ?? new Date().getFullYear();
@@ -50,16 +62,28 @@ export function AthleteStats({ athlete, showClub = true, dark = false }: { athle
         ))}
       </View>
 
-      {/* Clube Atual */}
+      {/* Clube Atual — botão p/ Estatísticas quando onPressClube é passado */}
       {showClub && (
-        <View style={[styles.clubCard, dark && styles.clubCardDark]}>
+        <Pressable
+          disabled={!onPressClube}
+          onPress={onPressClube}
+          accessibilityRole={onPressClube ? 'button' : undefined}
+          style={({ pressed }) => [
+            styles.clubCard,
+            dark && styles.clubCardDark,
+            pressed && !!onPressClube && styles.clubPressed,
+          ]}
+        >
           <Text variant="monoLabel" color={muted}>
             CLUBE ATUAL
           </Text>
-          <Text variant="smMedium" color={fg}>
-            {s?.ultimoClube ?? 'Nenhum'}
-          </Text>
-        </View>
+          <View style={styles.clubRight}>
+            <Text variant="smMedium" color={fg}>
+              {s?.ultimoClube ?? 'Nenhum'}
+            </Text>
+            {!!onPressClube && <Feather name="chevron-right" size={18} color={muted} />}
+          </View>
+        </Pressable>
       )}
     </View>
   );
@@ -103,5 +127,13 @@ const styles = StyleSheet.create({
   clubCardDark: {
     backgroundColor: palette.tintaElev,
     borderColor: palette.ruleOnDark,
+  },
+  clubPressed: {
+    opacity: 0.6,
+  },
+  clubRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 });
