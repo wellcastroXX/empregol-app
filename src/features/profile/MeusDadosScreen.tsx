@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Tag, Text } from "@/components/ui";
+import { Tag, Text, Toast } from "@/components/ui";
 import { POSITIONS } from "@/constants/positions";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -13,6 +13,7 @@ import {
   type AthleteDashboard,
 } from "@/services/api/dashboard-api";
 import { athletesApi } from "@/services/api/athletes-api";
+import { toAthleteMeUpdateBody } from "@/services/api/mappers";
 import { mediaApi } from "@/services/api/media-api";
 import { colors, fontFamily, palette, radii, spacing } from "@/theme";
 import type { AthleteProfile } from "@/types";
@@ -161,6 +162,7 @@ export function MeusDadosScreen() {
   const [dashboard, setDashboard] = useState<AthleteDashboard | null>(null);
   const [editing, setEditing] = useState<EditSection | null>(null);
   const [mediaCount, setMediaCount] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone: 'success' | 'danger' } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -388,22 +390,28 @@ export function MeusDadosScreen() {
           visible
           section={editing}
           athlete={athlete}
-          onSave={(p) => {
+          onSave={async (p) => {
             updateUser(p); // reflete na hora (local)
-            // Persiste as posições no banco (short codes), mantendo a principal.
-            if (p.posicoes?.length) {
-              const positions = p.posicoes.map(
-                (v) => POSITIONS.find((pp) => pp.value === v)?.short ?? v,
-              );
-              athletesApi
-                .updateMe({ positions, position: positions[0] })
-                .catch(() => undefined);
-            }
             setEditing(null);
+            try {
+              await athletesApi.updateMe(toAthleteMeUpdateBody(p));
+              setToast({ message: 'Dados salvos.', tone: 'success' });
+            } catch {
+              setToast({
+                message: 'Não foi possível salvar no servidor. Tente de novo.',
+                tone: 'danger',
+              });
+            }
           }}
           onClose={() => setEditing(null)}
         />
       )}
+
+      <Toast
+        message={toast?.message ?? null}
+        tone={toast?.tone}
+        onHide={() => setToast(null)}
+      />
     </SafeAreaView>
   );
 }

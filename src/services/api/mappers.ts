@@ -39,7 +39,9 @@ const GENDER_TO_API: Record<Genero, string> = { masculino: 'MALE', feminino: 'FE
 const GENDER_FROM_API: Record<string, Genero> = { MALE: 'masculino', FEMALE: 'feminino' };
 
 const AVAILABILITY_FROM_API: Record<string, AvailabilityStatus> = { FREE: 'livre', EMPLOYED: 'empregado' };
+const AVAILABILITY_TO_API: Record<AvailabilityStatus, string> = { livre: 'FREE', empregado: 'EMPLOYED' };
 const AGENCY_FROM_API: Record<string, AgencyStatus> = { REPRESENTED: 'agenciado', UNREPRESENTED: 'nao_agenciado' };
+const AGENCY_TO_API: Record<AgencyStatus, string> = { agenciado: 'REPRESENTED', nao_agenciado: 'UNREPRESENTED' };
 const CONTRACTOR_TO_API: Record<ContractorKind, string> = { agent: 'AGENT', club: 'CLUB' };
 const CONTRACTOR_FROM_API: Record<string, ContractorKind> = { AGENT: 'agent', CLUB: 'club' };
 
@@ -95,6 +97,37 @@ export function toContractorRegisterBody(p: Extract<SignUpPayload, { role: 'cont
     ...(p.redeSocial ? { socialMedia: p.redeSocial } : {}),
     ...(p.informacoesAdicionais ? { additionalInfo: p.informacoesAdicionais } : {}),
   };
+}
+
+/**
+ * Patch parcial do perfil (edição em "Meus Dados") → corpo do PUT /athletes/me.
+ * Só inclui os campos presentes no patch, já no formato/enum da API.
+ */
+export function toAthleteMeUpdateBody(p: Partial<AthleteProfile>): Record<string, unknown> {
+  const b: Record<string, unknown> = {};
+  // Status
+  if (p.disponibilidade) b.availability = AVAILABILITY_TO_API[p.disponibilidade];
+  if (p.agenciamento) b.agencyStatus = AGENCY_TO_API[p.agenciamento];
+  if (p.nivel) b.level = LEVEL_TO_API[p.nivel];
+  // Posição & numeração
+  if (p.posicoes?.length) {
+    b.positions = p.posicoes.map(positionShort);
+    b.position = positionShort(p.posicoes[0]);
+  } else if (p.posicao) {
+    b.position = positionShort(p.posicao);
+  }
+  if (p.peDominante) b.dominantFoot = FOOT_TO_API[p.peDominante];
+  if (p.numero != null && p.numero > 0) b.jerseyNumber = p.numero;
+  if (p.alturaCm != null && p.alturaCm > 0) b.height = p.alturaCm; // cm
+  if (p.pesoKg != null && p.pesoKg > 0) b.weight = p.pesoKg;
+  // Base salarial
+  if (p.baseSalarial != null && p.baseSalarial > 0) b.expectedSalary = p.baseSalarial;
+  // Dados pessoais
+  if (p.cpf) b.cpf = unmask(p.cpf);
+  if (p.dataNascimento) b.birthDate = p.dataNascimento;
+  if (p.naturalidade) b.naturalidade = p.naturalidade;
+  if (p.telefone) b.phone = unmask(p.telefone);
+  return b;
 }
 
 /* ── API `user` object → domain UserProfile ─────────────────────────────────── */
