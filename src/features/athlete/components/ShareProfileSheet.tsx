@@ -9,7 +9,6 @@ import {
   Alert,
   Linking,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import RNShare, { Social } from "react-native-share";
 import { captureRef } from "react-native-view-shot";
 
 import { Text } from "@/components/ui";
@@ -104,21 +104,22 @@ export function ShareProfileSheet({ visible, onClose, athlete }: ShareProfileShe
   };
 
   /**
-   * Abre o card direto no Story do Instagram (iOS): copia o PNG p/ o pasteboard
-   * e abre `instagram-stories://share`, que usa a imagem como fundo do story.
-   * Se não der (Android ou IG ausente), cai no share sheet do sistema.
+   * Abre o card direto no Story do Instagram via react-native-share, que seta a
+   * chave correta do pasteboard (com.instagram.sharedSticker.backgroundImage) no
+   * iOS / o intent ADD_TO_STORY no Android — então o card vira o fundo do story.
+   * Se falhar (IG ausente, etc.), cai no share sheet do sistema.
    */
   const shareToInstagramStory = async () => {
-    const igUrl = "instagram-stories://share?source_application=com.empregol";
     try {
-      if (Platform.OS === "ios" && (await Linking.canOpenURL(igUrl))) {
-        const base64 = await captureRef(cardRef, { format: "png", quality: 1, result: "base64" });
-        await Clipboard.setImageAsync(base64);
-        await Linking.openURL(igUrl);
-        return;
-      }
+      const base64 = await captureRef(cardRef, { format: "png", quality: 1, result: "base64" });
+      await RNShare.shareSingle({
+        social: Social.InstagramStories,
+        appId: "com.empregol",
+        backgroundImage: `data:image/png;base64,${base64}`,
+      });
+      return;
     } catch {
-      // cai no fallback abaixo
+      // cai no fallback abaixo (share sheet do sistema)
     }
     await shareImage();
   };
