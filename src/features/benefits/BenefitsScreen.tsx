@@ -21,20 +21,17 @@ export function BenefitsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Pressable hitSlop={10} onPress={() => router.back()} accessibilityRole="button">
-          <Feather name="chevron-left" size={24} color={colors.fg} />
-        </Pressable>
         <Text variant="eyebrow" color={colors.fgMuted}>
           B E N E F Í C I O S
         </Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         {/* Intro */}
         <View style={styles.intro}>
-          <Text variant="eyebrow" color={colors.fgMuted}>
-            B E N E F Í C I O S · E X C L U S I V O S
-          </Text>
           <Text style={styles.title} color={palette.gramado}>
             Benefícios{"\n"}Empregol
           </Text>
@@ -47,7 +44,10 @@ export function BenefitsScreen() {
         {BENEFITS.map((b) => (
           <Pressable
             key={b.key}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            style={({ pressed }) => [
+              styles.card,
+              pressed && styles.cardPressed,
+            ]}
             onPress={() => setSelected(b)}
             accessibilityRole="button"
           >

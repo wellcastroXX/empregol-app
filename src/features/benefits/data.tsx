@@ -28,7 +28,7 @@ export type Benefit = {
 export const BENEFITS: Benefit[] = [
   {
     key: "psicologo",
-    title: "Psicólogo",
+    title: "Psicológico",
     Icon: PsicologoIcon,
     subtitle: "Apoio psicológico para performance e cabeça no lugar.",
     image: require("../../../assets/images/benefits/a501954e-333d-4652-85a0-da883ec86bbe.jpeg"),
@@ -43,7 +43,7 @@ export const BENEFITS: Benefit[] = [
   },
   {
     key: "nutricionista",
-    title: "Nutricionista",
+    title: "Nutricional",
     Icon: NutricionistaIcon,
     subtitle: "Plano alimentar sob medida pro seu rendimento.",
     description:
@@ -57,7 +57,7 @@ export const BENEFITS: Benefit[] = [
   },
   {
     key: "financeiro",
-    title: "Financeiro",
+    title: "Finanças",
     Icon: FinanceiroIcon,
     subtitle: "Organize a carreira e o dinheiro desde já.",
     image: require("../../../assets/images/benefits/1956cd3e-92d9-4da2-a6b3-aeebd0f72182.jpeg"),
@@ -82,7 +82,7 @@ export const BENEFITS: Benefit[] = [
   },
   {
     key: "preparador",
-    title: "Preparador Físico",
+    title: "Preparador físico",
     Icon: PreparadorFisicoIcon,
     subtitle: "Treinos e preparação pra chegar no seu auge.",
     description:
