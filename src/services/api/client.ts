@@ -28,6 +28,15 @@ export function setAccessToken(token: string | null): void {
 }
 
 /**
+ * Handler chamado quando uma requisição AUTENTICADA recebe 401 (token expirado
+ * ou inválido). O AuthContext registra aqui para deslogar e voltar ao login.
+ */
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(fn: (() => void) | null): void {
+  onUnauthorized = fn;
+}
+
+/**
  * Thin typed fetch wrapper around the Empregol API.
  * Parses the `{ status, ... }` envelope and throws `ApiError` on failure.
  */
@@ -55,6 +64,8 @@ export async function apiRequest<T = unknown>(path: string, options: RequestOpti
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
+    // Token expirado/inválido numa rota autenticada → desloga.
+    if (response.status === 401 && token) onUnauthorized?.();
     const code = payload?.code ?? 'UNKNOWN';
     const message = payload?.message ?? 'Algo deu errado. Tente novamente.';
     throw new ApiError(message, code, response.status, payload?.errors);
@@ -96,6 +107,7 @@ export function apiUpload<T = unknown>(path: string, form: FormData, options: Up
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(payload as T);
       } else {
+        if (xhr.status === 401 && token) onUnauthorized?.();
         reject(
           new ApiError(
             payload?.message ?? 'Falha no envio do arquivo. Tente novamente.',

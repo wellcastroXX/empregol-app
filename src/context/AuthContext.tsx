@@ -10,7 +10,7 @@ import {
 } from 'react';
 
 import { authService, sessionStorage, AuthError } from '@/services';
-import { setAccessToken } from '@/services/api/client';
+import { setAccessToken, setUnauthorizedHandler } from '@/services/api/client';
 import type {
   AuthCredentials,
   AuthStatus,
@@ -175,6 +175,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     pending.current = null;
     dispatch({ type: 'signOut' });
   }, []);
+
+  // Token expirado/inválido (401 numa rota autenticada) → desloga e volta ao login.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      signOut();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [signOut]);
 
   // Revalida o perfil logado no servidor ao autenticar — corrige sessão antiga
   // (ex.: dados com encoding quebrado já saneados no banco) e mantém fresco.
