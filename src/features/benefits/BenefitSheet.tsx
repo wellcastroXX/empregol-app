@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -12,8 +13,9 @@ export type BenefitSheetProps = {
 };
 
 /**
- * Sheet de detalhe do benefício (80% da altura). Fundo escuro, ícone em tile
- * verde, descrição, checklist e CTA "ENTRAR EM CONTATO" — como a referência.
+ * Sheet de detalhe do benefício (80% da altura). Quando o benefício tem imagem
+ * do profissional, ela cobre o topo do sheet e empurra ícone, título, textos e
+ * itens para baixo. Fundo escuro, checklist e CTA "ENTRAR EM CONTATO".
  */
 export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
   const insets = useSafeAreaInsets();
@@ -24,6 +26,8 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
       "Em breve vamos te conectar com o profissional. Fica de olho!",
     );
   };
+
+  const hasImage = !!benefit?.image;
 
   return (
     <Modal
@@ -36,45 +40,75 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
       <View style={styles.backdrop}>
         <Pressable style={styles.backdropTap} onPress={onClose} accessibilityLabel="Fechar" />
         <View style={styles.sheet}>
-          <View style={styles.handle} />
-
           {benefit && (
             <>
               <ScrollView
                 style={styles.scroll}
-                contentContainerStyle={styles.content}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
               >
-                <View style={styles.iconTile}>
-                  <benefit.Icon color={palette.giz} size={26} />
-                </View>
+                {hasImage && (
+                  <Image source={benefit.image} style={styles.hero} contentFit="cover" />
+                )}
 
-                <Text variant="displaySm" color={palette.giz}>
-                  {benefit.title}
-                  <Text variant="displaySm" color={palette.gramado}>
-                    .
+                <View style={[styles.body, hasImage && styles.bodyOverlap]}>
+                  <View style={styles.iconTile}>
+                    <benefit.Icon color={palette.giz} size={26} />
+                  </View>
+
+                  <Text variant="displaySm" color={palette.giz}>
+                    {benefit.title}
+                    <Text variant="displaySm" color={palette.gramado}>
+                      .
+                    </Text>
                   </Text>
-                </Text>
 
-                <Text variant="body" color={palette.cinzaOnDark} style={styles.description}>
-                  {benefit.description}
-                </Text>
+                  <Text variant="body" color={palette.cinzaOnDark} style={styles.description}>
+                    {benefit.description}
+                  </Text>
 
-                <View style={styles.divider} />
-
-                <View style={styles.bullets}>
-                  {benefit.bullets.map((b) => (
-                    <View key={b} style={styles.bulletRow}>
-                      <View style={styles.check}>
-                        <Feather name="check" size={12} color={palette.giz} />
-                      </View>
-                      <Text variant="bodyMedium" color={palette.giz} style={styles.bulletText}>
-                        {b}
+                  {benefit.professional && (
+                    <View style={styles.professional}>
+                      <Text variant="bodyMedium" color={palette.giz}>
+                        {benefit.professional.name}
                       </Text>
+                      {!!benefit.professional.credential && (
+                        <Text style={styles.credential} color={palette.gramado}>
+                          {benefit.professional.credential}
+                        </Text>
+                      )}
+                      {!!benefit.professional.bio && (
+                        <Text variant="sm" color={palette.cinzaOnDark} style={styles.bio}>
+                          {benefit.professional.bio}
+                        </Text>
+                      )}
                     </View>
-                  ))}
+                  )}
+
+                  {!!benefit.bullets?.length && (
+                    <>
+                      <View style={styles.divider} />
+                      <View style={styles.bullets}>
+                        {benefit.bullets.map((b) => (
+                          <View key={b} style={styles.bulletRow}>
+                            <View style={styles.check}>
+                              <Feather name="check" size={12} color={palette.giz} />
+                            </View>
+                            <Text variant="bodyMedium" color={palette.giz} style={styles.bulletText}>
+                              {b}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </>
+                  )}
                 </View>
               </ScrollView>
+
+              {/* Handle por cima (fica visível na imagem e no fundo escuro) */}
+              <View style={styles.handleWrap} pointerEvents="none">
+                <View style={styles.handle} />
+              </View>
 
               <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
                 <Pressable
@@ -104,22 +138,40 @@ const styles = StyleSheet.create({
     backgroundColor: palette.tinta,
     borderTopLeftRadius: radii.lg,
     borderTopRightRadius: radii.lg,
-    paddingTop: spacing.sm,
+    overflow: "hidden",
+  },
+  scroll: { flexShrink: 1 },
+  scrollContent: { paddingBottom: spacing.xl },
+  hero: {
+    width: "100%",
+    height: 260,
+    backgroundColor: palette.tintaElev,
+  },
+  body: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    gap: spacing.md,
+  },
+  // Sobe o conteúdo por cima da base da imagem, criando a borda arredondada.
+  bodyOverlap: {
+    marginTop: -22,
+    backgroundColor: palette.tinta,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+  },
+  handleWrap: {
+    position: "absolute",
+    top: spacing.sm,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 10,
   },
   handle: {
-    alignSelf: "center",
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: palette.ruleOnDark,
-    marginVertical: spacing.sm,
-  },
-  scroll: { flexShrink: 1 },
-  content: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
+    backgroundColor: "rgba(251,250,245,0.7)",
   },
   iconTile: {
     width: 54,
@@ -131,6 +183,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   description: { lineHeight: 22 },
+  professional: {
+    gap: 2,
+    marginTop: spacing.xs,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: palette.ruleOnDark,
+  },
+  credential: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  bio: { lineHeight: 20, marginTop: spacing.xs },
   divider: {
     height: 1,
     backgroundColor: palette.ruleOnDark,

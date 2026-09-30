@@ -55,7 +55,7 @@ export function BenefitsScreen() {
               <View style={styles.iconTile}>
                 <b.Icon color={colors.fg} size={20} />
               </View>
-              <Feather name="chevron-down" size={20} color={colors.fgMuted} />
+              <Feather name="chevron-right" size={20} color={colors.fgMuted} />
             </View>
             <Text style={styles.cardTitle} color={colors.fg} numberOfLines={1}>
               {b.title}
