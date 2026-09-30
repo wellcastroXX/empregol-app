@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
+import { BeneficiosTabIcon } from '@/components/icons/benefits';
 import { useAuth } from '@/context/AuthContext';
 import { colors, fontFamily, palette } from '@/theme';
 
@@ -41,6 +42,13 @@ export default function TabsLayout() {
         options={{
           title: 'CONVERSAS',
           tabBarIcon: ({ color, size }) => <Feather name="message-circle" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="benefits"
+        options={{
+          title: 'BENEFÍCIOS',
+          tabBarIcon: ({ color, size }) => <BeneficiosTabIcon color={color} size={size} />,
         }}
       />
       <Tabs.Screen
