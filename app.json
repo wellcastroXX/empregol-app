@@ -62,6 +62,12 @@
         }
       ],
       "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#1F7A3D"
+        }
+      ],
       "./plugins/withExplicitModulesDisabled"
     ],
     "experiments": {

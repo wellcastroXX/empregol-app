@@ -2,11 +2,13 @@ import { Redirect, Stack } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/context/AuthContext';
+import { usePushNotifications } from '@/features/notifications/usePushNotifications';
 import { colors } from '@/theme';
 
 /** Authenticated area. Gates on session, then hosts tabs + pushed screens. */
 export default function AppLayout() {
   const { status } = useAuth();
+  usePushNotifications();
 
   if (status === 'loading') {
     return (
