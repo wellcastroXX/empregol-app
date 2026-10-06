@@ -27,6 +27,7 @@ import {
 } from "@/constants/positions";
 import { useAuth } from "@/context/AuthContext";
 import { RegisterHeader } from "@/features/auth/components/RegisterHeader";
+import { TermsAcceptance } from "@/features/auth/components/TermsAcceptance";
 import { AuthError } from "@/services";
 import { colors, fontFamily, palette, radii, spacing } from "@/theme";
 import type {
@@ -66,6 +67,7 @@ interface FormState {
   pesoKg: string;
   nivel?: PlayerLevel;
   ultimoClube: string;
+  perfilEsportivoUrl: string;
   redeSocial: string;
   disponibilidade?: AvailabilityStatus;
   agenciamento?: AgencyStatus;
@@ -140,12 +142,16 @@ export function AthleteRegisterScreen() {
     alturaM: "",
     pesoKg: "",
     ultimoClube: "",
+    perfilEsportivoUrl: "",
     redeSocial: "",
     baseSalarial: "",
     videos: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const isLastStep = step === STEP_COUNT - 1;
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -252,6 +258,7 @@ export function AthleteRegisterScreen() {
         agenciamento: form.agenciamento!,
         baseSalarial: Number(unmask(form.baseSalarial)),
         redeSocial: form.redeSocial.trim() || undefined,
+        perfilEsportivoUrl: form.perfilEsportivoUrl.trim() || undefined,
         stats: form.ultimoClube.trim()
           ? { ultimoClube: form.ultimoClube.trim() }
           : undefined,
@@ -473,6 +480,15 @@ export function AthleteRegisterScreen() {
                 onChangeText={(v) => set("ultimoClube", v)}
                 placeholder="Vitória"
               />
+              <TextField
+                label="LINK DO SEU PERFIL ESPORTIVO"
+                hint="Opcional · visível p/ clubes"
+                autoCapitalize="none"
+                keyboardType="url"
+                value={form.perfilEsportivoUrl}
+                onChangeText={(v) => set("perfilEsportivoUrl", v)}
+                placeholder="Transfermarkt/OGol ou outro"
+              />
             </>
           )}
 
@@ -539,11 +555,18 @@ export function AthleteRegisterScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
+          {isLastStep && (
+            <TermsAcceptance
+              accepted={acceptedTerms}
+              onToggle={setAcceptedTerms}
+            />
+          )}
           <Button
-            label={step < STEP_COUNT - 1 ? "CONTINUAR" : "FINALIZAR CADASTRO"}
+            label={isLastStep ? "FINALIZAR CADASTRO" : "CONTINUAR"}
             chevron
             fullWidth
             loading={loading}
+            disabled={isLastStep && !acceptedTerms}
             onPress={handleNext}
           />
         </View>
@@ -667,5 +690,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     borderTopWidth: 1,
     borderTopColor: colors.rule,
+    gap: spacing.lg,
   },
 });

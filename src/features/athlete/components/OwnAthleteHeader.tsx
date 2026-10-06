@@ -1,22 +1,22 @@
-import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { Pressable, StyleSheet, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
-import { Tag, Text } from '@/components/ui';
-import { POSITIONS } from '@/constants/positions';
-import { fontFamily, jerseySize, palette, radii, spacing } from '@/theme';
-import type { AthleteProfile } from '@/types';
-import { initials as toInitials } from '@/utils';
-import { agencyTag, availabilityTag, levelTag } from '../badges';
+import { Tag, Text } from "@/components/ui";
+import { POSITIONS } from "@/constants/positions";
+import { fontFamily, jerseySize, palette, radii, spacing } from "@/theme";
+import type { AthleteProfile } from "@/types";
+import { initials as toInitials } from "@/utils";
+import { agencyTag, availabilityTag, levelTag } from "../badges";
 
 const PHOTO_W = 138;
 const PHOTO_H = 176;
 
-const FOOT_LABEL: Record<AthleteProfile['peDominante'], string> = {
-  esquerdo: 'CANHOTO',
-  direito: 'DESTRO',
-  ambidestro: 'AMBIDESTRO',
+const FOOT_LABEL: Record<AthleteProfile["peDominante"], string> = {
+  esquerdo: "CANHOTO",
+  direito: "DESTRO",
+  ambidestro: "AMBIDESTRO",
 };
 
 /** Camera glyph (stroke = cream), exactly per the reference spec. */
@@ -37,7 +37,13 @@ function CameraIcon({ color = palette.giz }: { color?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <Path d="M6 4.875L7.125 3.375H10.875L12 4.875" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M6 4.875L7.125 3.375H10.875L12 4.875"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
@@ -46,7 +52,13 @@ function CameraIcon({ color = palette.giz }: { color?: string }) {
 function PencilIcon({ color = palette.giz }: { color?: string }) {
   return (
     <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
-      <Path d="M10.5 3L15 7.5L6.75 15.75H2.25V11.25L10.5 3Z" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M10.5 3L15 7.5L6.75 15.75H2.25V11.25L10.5 3Z"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
@@ -59,10 +71,10 @@ function ActionButton({
 }: {
   label: string;
   icon: React.ReactNode;
-  variant: 'outline' | 'solid';
+  variant: "outline" | "solid";
   onPress?: () => void;
 }) {
-  const solid = variant === 'solid';
+  const solid = variant === "solid";
   return (
     <Pressable
       onPress={onPress}
@@ -71,7 +83,8 @@ function ActionButton({
         styles.btn,
         solid ? styles.btnSolid : styles.btnOutline,
         pressed && styles.btnPressed,
-      ]}>
+      ]}
+    >
       <Text style={styles.btnLabel} color={palette.giz}>
         {label}
       </Text>
@@ -90,15 +103,26 @@ export type OwnAthleteHeaderProps = {
 };
 
 /** Dark editorial header for the athlete's OWN profile — matches the reference. */
-export function OwnAthleteHeader({ athlete, insetsTop, onUpdatePhoto, onUpdateData, onShare }: OwnAthleteHeaderProps) {
-  const isVerified = athlete.verificacao === 'verified';
-  const daysActive = Math.max(0, Math.floor((Date.now() - new Date(athlete.criadoEm).getTime()) / 86400000));
+export function OwnAthleteHeader({
+  athlete,
+  insetsTop,
+  onUpdatePhoto,
+  onUpdateData,
+  onShare,
+}: OwnAthleteHeaderProps) {
+  const isVerified = athlete.verificacao === "verified";
+  const daysActive = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(athlete.criadoEm).getTime()) / 86400000),
+  );
   const availability = availabilityTag(athlete.disponibilidade);
   const level = levelTag(athlete.nivel);
   const agency = agencyTag(athlete.agenciamento);
 
   const pos = POSITIONS.find((p) => p.value === athlete.posicao);
-  const positionTag = pos ? `${pos.short} · ${pos.label.toUpperCase()}` : athlete.posicao.toUpperCase();
+  const positionTag = pos
+    ? `${pos.short} · ${pos.label.toUpperCase()}`
+    : athlete.posicao.toUpperCase();
   const heightMeters = `${(athlete.alturaCm / 100).toFixed(2)}M`;
   const physical = `${athlete.idade} ANOS · ${heightMeters}`;
   const footTag = FOOT_LABEL[athlete.peDominante];
@@ -110,7 +134,12 @@ export function OwnAthleteHeader({ athlete, insetsTop, onUpdatePhoto, onUpdateDa
         <Text variant="eyebrow" color={palette.giz}>
           P E R F I L
         </Text>
-        <Pressable hitSlop={10} onPress={onShare} accessibilityRole="button" accessibilityLabel="Compartilhar">
+        <Pressable
+          hitSlop={10}
+          onPress={onShare}
+          accessibilityRole="button"
+          accessibilityLabel="Compartilhar"
+        >
           <Feather name="share-2" size={18} color={palette.giz} />
         </Pressable>
       </View>
@@ -120,7 +149,11 @@ export function OwnAthleteHeader({ athlete, insetsTop, onUpdatePhoto, onUpdateDa
       <View style={styles.heroRow}>
         <View style={styles.photoWrap}>
           {athlete.fotoUrl ? (
-            <Image source={{ uri: athlete.fotoUrl }} style={styles.photo} contentFit="cover" />
+            <Image
+              source={{ uri: athlete.fotoUrl }}
+              style={styles.photo}
+              contentFit="cover"
+            />
           ) : (
             <View style={[styles.photo, styles.photoFallback]}>
               <Text style={styles.initials} color={palette.giz}>
@@ -128,30 +161,43 @@ export function OwnAthleteHeader({ athlete, insetsTop, onUpdatePhoto, onUpdateDa
               </Text>
             </View>
           )}
-          {athlete.numero != null && (
-            <Text style={styles.jersey}>{String(athlete.numero).padStart(2, '0')}</Text>
-          )}
+          <Text style={styles.jersey}>
+            {pos?.short ?? athlete.posicao.toUpperCase()}
+          </Text>
         </View>
 
         <View style={styles.info}>
           <Text variant="eyebrow" color={palette.cinzaOnDark}>
-            {isVerified ? 'V E R I F I C A D O' : 'P E N D E N T E'}
+            {isVerified ? "V E R I F I C A D O" : "P E N D E N T E"}
           </Text>
           <Text style={styles.name} color={palette.giz} numberOfLines={2}>
             {athlete.nome}
           </Text>
 
           <View style={styles.verifiedRow}>
-            <View style={[styles.checkDot, !isVerified && styles.checkDotPending]}>
-              <Feather name={isVerified ? 'check' : 'clock'} size={13} color={palette.giz} />
+            <View
+              style={[styles.checkDot, !isVerified && styles.checkDotPending]}
+            >
+              <Feather
+                name={isVerified ? "check" : "clock"}
+                size={13}
+                color={palette.giz}
+              />
             </View>
             <Text style={styles.verifiedText} color={palette.cinzaOnDark}>
-              {isVerified ? `VERIFICADO · ${daysActive}D` : 'AGUARDANDO'}
+              {isVerified ? `VERIFICADO · ${daysActive}D` : "AGUARDANDO"}
             </Text>
           </View>
 
           <View style={styles.statusTags}>
-            <Tag label={availability.label} variant={athlete.disponibilidade === 'livre' ? 'live' : 'empregado'} dot={athlete.disponibilidade === 'livre'} size="md" />
+            <Tag
+              label={availability.label}
+              variant={
+                athlete.disponibilidade === "livre" ? "live" : "empregado"
+              }
+              dot={athlete.disponibilidade === "livre"}
+              size="md"
+            />
             <Tag label={level.label} variant="ghostLight" size="md" />
             <Tag label={agency.label} variant="ghostLight" size="md" />
           </View>
@@ -167,8 +213,18 @@ export function OwnAthleteHeader({ athlete, insetsTop, onUpdatePhoto, onUpdateDa
 
       {/* Edit actions */}
       <View style={styles.buttons}>
-        <ActionButton label="ATUALIZAR FOTO" icon={<CameraIcon />} variant="outline" onPress={onUpdatePhoto} />
-        <ActionButton label="ATUALIZAR DADOS" icon={<PencilIcon />} variant="solid" onPress={onUpdateData} />
+        <ActionButton
+          label="ATUALIZAR FOTO"
+          icon={<CameraIcon />}
+          variant="outline"
+          onPress={onUpdatePhoto}
+        />
+        <ActionButton
+          label="ATUALIZAR DADOS"
+          icon={<PencilIcon />}
+          variant="solid"
+          onPress={onUpdateData}
+        />
       </View>
     </View>
   );
@@ -182,9 +238,9 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingTop: spacing.xs,
   },
   rule: {
@@ -193,9 +249,9 @@ const styles = StyleSheet.create({
     marginTop: -spacing.xs,
   },
   heroRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.lg,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   photoWrap: {
     width: PHOTO_W,
@@ -208,25 +264,24 @@ const styles = StyleSheet.create({
     backgroundColor: palette.tintaElev,
   },
   photoFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   initials: {
     fontFamily: fontFamily.displayBold,
     fontSize: PHOTO_W * 0.34,
     lineHeight: PHOTO_W * 0.42,
-    textAlign: 'center',
+    textAlign: "center",
   },
   jersey: {
-    position: 'absolute',
+    position: "absolute",
     right: -2,
     bottom: -10,
     fontFamily: fontFamily.monoMedium,
-    fontSize: jerseySize.md + 8,
-    lineHeight: jerseySize.md + 8,
+    fontSize: jerseySize.sm,
+    lineHeight: jerseySize.sm + 2,
     color: palette.giz,
-    letterSpacing: -4,
-    fontVariant: ['tabular-nums'] as const,
+    letterSpacing: 0.5,
     includeFontPadding: false,
   },
   info: {
@@ -241,8 +296,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   verifiedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
     marginTop: 2,
   },
@@ -256,25 +311,25 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: palette.gramado,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkDotPending: {
     backgroundColor: palette.warn,
   },
   statusTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
     marginTop: spacing.xs,
   },
   infoTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
   buttons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
     marginTop: spacing.xs,
   },
@@ -282,13 +337,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: radii.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
   },
   btnOutline: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: palette.giz64,
   },
@@ -302,6 +357,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.monoMedium,
     fontSize: 12,
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 });

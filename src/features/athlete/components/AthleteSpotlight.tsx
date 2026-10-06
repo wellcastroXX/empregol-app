@@ -1,10 +1,10 @@
-import { Image } from 'expo-image';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Image } from "expo-image";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
-import { Text } from '@/components/ui';
-import { fontFamily, palette, radii, spacing } from '@/theme';
-import { initials as toInitials, timeAgoShort } from '@/utils';
+import { Text } from "@/components/ui";
+import { fontFamily, palette, radii, spacing } from "@/theme";
+import { timeAgoShort, initials as toInitials } from "@/utils";
 
 export type SpotlightAthlete = {
   id: string;
@@ -21,7 +21,13 @@ const ROTATE_MS = 10000;
  * atletas recém-chegados. Card verde com borda; dots FORA do card, à direita.
  * Mostra a foto do atleta ou as iniciais.
  */
-export function AthleteSpotlight({ athletes }: { athletes: SpotlightAthlete[] }) {
+export function AthleteSpotlight({
+  athletes,
+  onPressAthlete,
+}: {
+  athletes: SpotlightAthlete[];
+  onPressAthlete: (id: string) => void;
+}) {
   const [index, setIndex] = useState(0);
   const opacity = useRef(new Animated.Value(1)).current;
   const translateY = useRef(new Animated.Value(0)).current;
@@ -29,12 +35,24 @@ export function AthleteSpotlight({ athletes }: { athletes: SpotlightAthlete[] })
   useEffect(() => {
     if (athletes.length <= 1) return;
     const timer = setInterval(() => {
-      Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }).start(() => {
         setIndex((i) => (i + 1) % athletes.length);
         translateY.setValue(16);
         Animated.parallel([
-          Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }),
-          Animated.timing(translateY, { toValue: 0, duration: 280, useNativeDriver: true }),
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 280,
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateY, {
+            toValue: 0,
+            duration: 280,
+            useNativeDriver: true,
+          }),
         ]).start();
       });
     }, ROTATE_MS);
@@ -48,41 +66,64 @@ export function AthleteSpotlight({ athletes }: { athletes: SpotlightAthlete[] })
     <View style={styles.wrap}>
       <View style={styles.frame}>
         <View style={styles.card}>
-        <Text style={styles.eyebrow} color={MUTED}>
-          D E S T A Q U E S · D A · S E M A N A
-        </Text>
+          <Text
+            style={styles.eyebrow}
+            color={MUTED}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.65}
+          >
+            D E S T A Q U E S · D A · S E M A N A
+          </Text>
 
-        <Animated.View style={[styles.body, { opacity, transform: [{ translateY }] }]}>
-          <View style={styles.row}>
-            {a.fotoUrl ? (
-              <Image source={{ uri: a.fotoUrl }} style={styles.photo} contentFit="cover" />
-            ) : (
-              <View style={[styles.photo, styles.photoFallback]}>
-                <Text style={styles.initials} color={palette.giz}>
-                  {toInitials(a.nome)}
+          <Pressable
+            onPress={() => onPressAthlete(a.id)}
+            accessibilityRole="button"
+            accessibilityLabel={`Abrir perfil de ${a.nome}`}
+          >
+            <Animated.View
+              style={[styles.body, { opacity, transform: [{ translateY }] }]}
+            >
+              <View style={styles.row}>
+                {a.fotoUrl ? (
+                  <Image
+                    source={{ uri: a.fotoUrl }}
+                    style={styles.photo}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={[styles.photo, styles.photoFallback]}>
+                    <Text style={styles.initials} color={palette.giz}>
+                      {toInitials(a.nome)}
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.name} color={palette.giz} numberOfLines={2}>
+                  {a.nome.toUpperCase()}
                 </Text>
               </View>
-            )}
-            <Text style={styles.name} color={palette.giz} numberOfLines={2}>
-              {a.nome.toUpperCase()}
-            </Text>
-          </View>
 
-          {!!a.naturalidade && (
-            <Text style={styles.state} color={MUTED}>
-              {a.naturalidade.toUpperCase()}
-            </Text>
-          )}
+              {!!a.naturalidade && (
+                <Text style={styles.state} color={MUTED}>
+                  {a.naturalidade.toUpperCase()}
+                </Text>
+              )}
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText} color={palette.giz}>
-              {a.criadoEm ? `Entrou há ${timeAgoShort(a.criadoEm)}` : 'Novo na plataforma'}
-            </Text>
-            <Text style={styles.footerText} color={MUTED}>
-              Está agora na <Text style={styles.brand} color={palette.giz}>empregol</Text>
-            </Text>
-          </View>
-        </Animated.View>
+              <View style={styles.footer}>
+                <Text style={styles.footerText} color={palette.giz}>
+                  {a.criadoEm
+                    ? `Entrou há ${timeAgoShort(a.criadoEm)}`
+                    : "Novo na plataforma"}
+                </Text>
+                <Text style={styles.footerText} color={MUTED}>
+                  Está agora na{" "}
+                  <Text style={styles.brand} color={palette.giz}>
+                    empregol
+                  </Text>
+                </Text>
+              </View>
+            </Animated.View>
+          </Pressable>
         </View>
       </View>
 
@@ -90,7 +131,10 @@ export function AthleteSpotlight({ athletes }: { athletes: SpotlightAthlete[] })
       {athletes.length > 1 && (
         <View style={styles.dots}>
           {athletes.map((x, i) => (
-            <View key={x.id} style={[styles.dot, i === index && styles.dotActive]} />
+            <View
+              key={x.id}
+              style={[styles.dot, i === index && styles.dotActive]}
+            />
           ))}
         </View>
       )}
@@ -98,12 +142,12 @@ export function AthleteSpotlight({ athletes }: { athletes: SpotlightAthlete[] })
   );
 }
 
-const MUTED = 'rgba(251,250,245,0.7)';
+const MUTED = "rgba(251,250,245,0.7)";
 
 const styles = StyleSheet.create({
   wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
     marginHorizontal: spacing.lg,
   },
@@ -121,20 +165,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
     minHeight: 150,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   eyebrow: {
     fontFamily: fontFamily.monoMedium,
     fontSize: 12,
-    letterSpacing: 2,
-    textAlign: 'center',
+    letterSpacing: 1.2,
+    textAlign: "center",
+    width: "100%",
+    flexShrink: 1,
   },
   body: {
     gap: spacing.sm,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.md,
   },
   photo: {
@@ -144,8 +190,8 @@ const styles = StyleSheet.create({
     backgroundColor: palette.tinta,
   },
   photoFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   initials: {
     fontFamily: fontFamily.displayBold,
@@ -162,12 +208,12 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.monoMedium,
     fontSize: 11,
     letterSpacing: 1.4,
-    textAlign: 'right',
+    textAlign: "right",
   },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.md,
     marginTop: spacing.xs,
   },
@@ -181,8 +227,8 @@ const styles = StyleSheet.create({
   },
   dots: {
     width: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
   },
   dot: {

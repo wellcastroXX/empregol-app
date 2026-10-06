@@ -1,49 +1,83 @@
-import { POSITIONS } from '@/constants/positions';
+import { POSITIONS } from "@/constants/positions";
 import type {
-  AgencyStatus,
-  AthleteMediaItem,
-  AthleteProfile,
-  AvailabilityStatus,
-  ContractorKind,
-  ContractorProfile,
-  DominantFoot,
-  Genero,
-  PlayerLevel,
-  Position,
-  SignUpPayload,
-  UserProfile,
-} from '@/types';
-import { ageFromBirthdate, maskCnpj, maskCpf, maskPhone, unmask } from '@/utils';
+    AgencyStatus,
+    AthleteMediaItem,
+    AthleteProfile,
+    AvailabilityStatus,
+    ContractorKind,
+    ContractorProfile,
+    DominantFoot,
+    Genero,
+    PlayerLevel,
+    Position,
+    SignUpPayload,
+    UserProfile,
+} from "@/types";
+import {
+    ageFromBirthdate,
+    maskCnpj,
+    maskCpf,
+    maskPhone,
+    unmask,
+} from "@/utils";
 
 /* ── Enum maps (domain ↔ API) ───────────────────────────────────────────────── */
 
 const FOOT_TO_API: Record<DominantFoot, string> = {
-  esquerdo: 'LEFT',
-  direito: 'RIGHT',
-  ambidestro: 'BOTH',
+  esquerdo: "LEFT",
+  direito: "RIGHT",
+  ambidestro: "BOTH",
 };
-const FOOT_FROM_API: Record<string, DominantFoot> = { LEFT: 'esquerdo', RIGHT: 'direito', BOTH: 'ambidestro' };
+const FOOT_FROM_API: Record<string, DominantFoot> = {
+  LEFT: "esquerdo",
+  RIGHT: "direito",
+  BOTH: "ambidestro",
+};
 
 const LEVEL_TO_API: Record<PlayerLevel, string> = {
-  profissional: 'PROFESSIONAL',
-  amador: 'AMATEUR',
-  base: 'YOUTH',
+  profissional: "PROFESSIONAL",
+  amador: "AMATEUR",
+  base: "YOUTH",
 };
 const LEVEL_FROM_API: Record<string, PlayerLevel> = {
-  PROFESSIONAL: 'profissional',
-  AMATEUR: 'amador',
-  YOUTH: 'base',
+  PROFESSIONAL: "profissional",
+  AMATEUR: "amador",
+  YOUTH: "base",
 };
 
-const GENDER_TO_API: Record<Genero, string> = { masculino: 'MALE', feminino: 'FEMALE' };
-const GENDER_FROM_API: Record<string, Genero> = { MALE: 'masculino', FEMALE: 'feminino' };
+const GENDER_TO_API: Record<Genero, string> = {
+  masculino: "MALE",
+  feminino: "FEMALE",
+};
+const GENDER_FROM_API: Record<string, Genero> = {
+  MALE: "masculino",
+  FEMALE: "feminino",
+};
 
-const AVAILABILITY_FROM_API: Record<string, AvailabilityStatus> = { FREE: 'livre', EMPLOYED: 'empregado' };
-const AVAILABILITY_TO_API: Record<AvailabilityStatus, string> = { livre: 'FREE', empregado: 'EMPLOYED' };
-const AGENCY_FROM_API: Record<string, AgencyStatus> = { REPRESENTED: 'agenciado', UNREPRESENTED: 'nao_agenciado' };
-const AGENCY_TO_API: Record<AgencyStatus, string> = { agenciado: 'REPRESENTED', nao_agenciado: 'UNREPRESENTED' };
-const CONTRACTOR_TO_API: Record<ContractorKind, string> = { agent: 'AGENT', club: 'CLUB' };
-const CONTRACTOR_FROM_API: Record<string, ContractorKind> = { AGENT: 'agent', CLUB: 'club' };
+const AVAILABILITY_FROM_API: Record<string, AvailabilityStatus> = {
+  FREE: "livre",
+  EMPLOYED: "empregado",
+};
+const AVAILABILITY_TO_API: Record<AvailabilityStatus, string> = {
+  livre: "FREE",
+  empregado: "EMPLOYED",
+};
+const AGENCY_FROM_API: Record<string, AgencyStatus> = {
+  REPRESENTED: "agenciado",
+  UNREPRESENTED: "nao_agenciado",
+};
+const AGENCY_TO_API: Record<AgencyStatus, string> = {
+  agenciado: "REPRESENTED",
+  nao_agenciado: "UNREPRESENTED",
+};
+const CONTRACTOR_TO_API: Record<ContractorKind, string> = {
+  agent: "AGENT",
+  club: "CLUB",
+};
+const CONTRACTOR_FROM_API: Record<string, ContractorKind> = {
+  AGENT: "agent",
+  CLUB: "club",
+};
 
 /** Position round-trips as its short code (e.g. "MCO"). */
 function positionFromApi(short: string): Position {
@@ -51,7 +85,10 @@ function positionFromApi(short: string): Position {
 }
 
 /** Todas as posições (até 3); cai na principal quando o back não manda o array. */
-function positionsFromApi(list: string[] | null | undefined, primary: string): Position[] {
+function positionsFromApi(
+  list: string[] | null | undefined,
+  primary: string,
+): Position[] {
   const src = list?.length ? list : [primary];
   return src.map(positionFromApi);
 }
@@ -61,9 +98,13 @@ function positionsFromApi(list: string[] | null | undefined, primary: string): P
 const positionShort = (pos: Position) =>
   POSITIONS.find((p) => p.value === pos)?.short ?? pos;
 
-export function toAthleteRegisterBody(p: Extract<SignUpPayload, { role: 'athlete' }>) {
+export function toAthleteRegisterBody(
+  p: Extract<SignUpPayload, { role: "athlete" }>,
+) {
   // Até 3 posições (short codes). A 1ª é a principal; garante ao menos a principal.
-  const positions = (p.posicoes?.length ? p.posicoes : [p.posicao]).map(positionShort);
+  const positions = (p.posicoes?.length ? p.posicoes : [p.posicao]).map(
+    positionShort,
+  );
   return {
     email: p.email,
     password: p.senha,
@@ -81,10 +122,15 @@ export function toAthleteRegisterBody(p: Extract<SignUpPayload, { role: 'athlete
     level: LEVEL_TO_API[p.nivel],
     ...(p.baseSalarial ? { expectedSalary: p.baseSalarial } : {}),
     ...(p.videos[0] ? { videoUrl: p.videos[0] } : {}),
+    ...(p.perfilEsportivoUrl
+      ? { sportsProfileUrl: p.perfilEsportivoUrl }
+      : {}),
   };
 }
 
-export function toContractorRegisterBody(p: Extract<SignUpPayload, { role: 'contractor' }>) {
+export function toContractorRegisterBody(
+  p: Extract<SignUpPayload, { role: "contractor" }>,
+) {
   return {
     type: CONTRACTOR_TO_API[p.tipo],
     email: p.email,
@@ -95,7 +141,9 @@ export function toContractorRegisterBody(p: Extract<SignUpPayload, { role: 'cont
     ...(p.cnpj ? { cnpj: unmask(p.cnpj) } : {}),
     ...(p.razaoSocial ? { companyName: p.razaoSocial } : {}),
     ...(p.redeSocial ? { socialMedia: p.redeSocial } : {}),
-    ...(p.informacoesAdicionais ? { additionalInfo: p.informacoesAdicionais } : {}),
+    ...(p.informacoesAdicionais
+      ? { additionalInfo: p.informacoesAdicionais }
+      : {}),
   };
 }
 
@@ -103,10 +151,13 @@ export function toContractorRegisterBody(p: Extract<SignUpPayload, { role: 'cont
  * Patch parcial do perfil (edição em "Meus Dados") → corpo do PUT /athletes/me.
  * Só inclui os campos presentes no patch, já no formato/enum da API.
  */
-export function toAthleteMeUpdateBody(p: Partial<AthleteProfile>): Record<string, unknown> {
+export function toAthleteMeUpdateBody(
+  p: Partial<AthleteProfile>,
+): Record<string, unknown> {
   const b: Record<string, unknown> = {};
   // Status
-  if (p.disponibilidade) b.availability = AVAILABILITY_TO_API[p.disponibilidade];
+  if (p.disponibilidade)
+    b.availability = AVAILABILITY_TO_API[p.disponibilidade];
   if (p.agenciamento) b.agencyStatus = AGENCY_TO_API[p.agenciamento];
   if (p.nivel) b.level = LEVEL_TO_API[p.nivel];
   // Posição & numeração
@@ -121,12 +172,16 @@ export function toAthleteMeUpdateBody(p: Partial<AthleteProfile>): Record<string
   if (p.alturaCm != null && p.alturaCm > 0) b.height = p.alturaCm; // cm
   if (p.pesoKg != null && p.pesoKg > 0) b.weight = p.pesoKg;
   // Base salarial
-  if (p.baseSalarial != null && p.baseSalarial > 0) b.expectedSalary = p.baseSalarial;
+  if (p.baseSalarial != null && p.baseSalarial > 0)
+    b.expectedSalary = p.baseSalarial;
   // Dados pessoais
   if (p.cpf) b.cpf = unmask(p.cpf);
   if (p.dataNascimento) b.birthDate = p.dataNascimento;
   if (p.naturalidade) b.naturalidade = p.naturalidade;
   if (p.telefone) b.phone = unmask(p.telefone);
+  // Perfil esportivo externo (string vazia → null para limpar)
+  if (p.perfilEsportivoUrl !== undefined)
+    b.sportsProfileUrl = p.perfilEsportivoUrl.trim() || null;
   return b;
 }
 
@@ -135,7 +190,7 @@ export function toAthleteMeUpdateBody(p: Partial<AthleteProfile>): Record<string
 interface ApiUser {
   id: string;
   email: string;
-  role: 'ATHLETE' | 'AGENT' | 'CLUB';
+  role: "ATHLETE" | "AGENT" | "CLUB";
   emailVerified?: boolean;
   athlete?: ApiAthlete | null;
   contractor?: ApiContractor | null;
@@ -160,11 +215,13 @@ interface ApiAthlete {
   avatarUrl?: string | null;
   expectedSalary?: string | number | null;
   socialMedia?: string | null;
+  sportsProfileUrl?: string | null;
   additionalInfo?: string | null;
   lastClub?: string | null;
   goals?: number | null;
   assists?: number | null;
   gamesThisSeason?: number | null;
+  minutesPlayed?: number | null;
   createdAt?: string;
 }
 interface ApiContractor {
@@ -182,24 +239,24 @@ interface ApiContractor {
 }
 
 export function toUserProfile(user: ApiUser): UserProfile {
-  if (user.role === 'ATHLETE' && user.athlete) {
+  if (user.role === "ATHLETE" && user.athlete) {
     return toAthleteProfile(user, user.athlete);
   }
   if (user.contractor) {
     return toContractorProfile(user, user.contractor);
   }
-  throw new Error('Perfil de usuário incompleto retornado pela API.');
+  throw new Error("Perfil de usuário incompleto retornado pela API.");
 }
 
 function toAthleteProfile(user: ApiUser, a: ApiAthlete): AthleteProfile {
   return {
     id: user.id,
-    role: 'athlete',
+    role: "athlete",
     nome: a.fullName,
     email: user.email,
     telefone: maskPhone(a.phone),
     emailVerificado: user.emailVerified ?? true,
-    verificacao: 'verified',
+    verificacao: "verified",
     fotoUrl: a.avatarUrl ?? undefined,
     redeSocial: a.socialMedia ?? undefined,
     informacoesAdicionais: a.additionalInfo ?? undefined,
@@ -208,18 +265,19 @@ function toAthleteProfile(user: ApiUser, a: ApiAthlete): AthleteProfile {
     dataNascimento: a.birthDate,
     idade: ageFromBirthdate(a.birthDate),
     naturalidade: a.naturalidade,
-    genero: GENDER_FROM_API[a.gender ?? ''] ?? 'masculino',
+    genero: GENDER_FROM_API[a.gender ?? ""] ?? "masculino",
     posicao: positionFromApi(a.position),
     posicoes: positionsFromApi(a.positions, a.position),
-    peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
+    peDominante: FOOT_FROM_API[a.dominantFoot] ?? "direito",
     alturaCm: a.height,
     pesoKg: a.weight,
     videos: [],
-    nivel: LEVEL_FROM_API[a.level] ?? 'profissional',
-    disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? 'livre',
-    agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? 'nao_agenciado',
+    nivel: LEVEL_FROM_API[a.level] ?? "profissional",
+    disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? "livre",
+    agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? "nao_agenciado",
     baseSalarial: a.expectedSalary != null ? Number(a.expectedSalary) : 0,
     numero: a.jerseyNumber ?? undefined,
+    perfilEsportivoUrl: a.sportsProfileUrl ?? undefined,
     stats: {
       gols: a.goals ?? undefined,
       assistencias: a.assists ?? undefined,
@@ -229,16 +287,19 @@ function toAthleteProfile(user: ApiUser, a: ApiAthlete): AthleteProfile {
   };
 }
 
-function toContractorProfile(user: ApiUser, c: ApiContractor): ContractorProfile {
+function toContractorProfile(
+  user: ApiUser,
+  c: ApiContractor,
+): ContractorProfile {
   return {
     id: user.id,
-    role: 'contractor',
-    tipo: CONTRACTOR_FROM_API[c.type] ?? 'club',
+    role: "contractor",
+    tipo: CONTRACTOR_FROM_API[c.type] ?? "club",
     nome: c.name,
     email: user.email,
     telefone: maskPhone(c.phone),
     emailVerificado: user.emailVerified ?? true,
-    verificacao: 'verified',
+    verificacao: "verified",
     fotoUrl: c.avatarUrl ?? undefined,
     redeSocial: c.socialMedia ?? undefined,
     informacoesAdicionais: c.additionalInfo ?? undefined,
@@ -265,21 +326,24 @@ export function toAthleteMePatch(a: ApiAthlete): Partial<AthleteProfile> {
     naturalidade: a.naturalidade,
     posicao: positionFromApi(a.position),
     posicoes: positionsFromApi(a.positions, a.position),
-    peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
+    peDominante: FOOT_FROM_API[a.dominantFoot] ?? "direito",
     alturaCm: a.height,
     pesoKg: a.weight,
-    nivel: LEVEL_FROM_API[a.level] ?? 'profissional',
-    disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? 'livre',
-    agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? 'nao_agenciado',
+    nivel: LEVEL_FROM_API[a.level] ?? "profissional",
+    disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? "livre",
+    agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? "nao_agenciado",
     baseSalarial: a.expectedSalary != null ? Number(a.expectedSalary) : 0,
     numero: a.jerseyNumber ?? undefined,
+    perfilEsportivoUrl: a.sportsProfileUrl ?? undefined,
   };
 }
 
 /** GET /contractors/me → campos de exibição p/ atualizar a sessão local. */
-export function toContractorMePatch(c: ApiContractor): Partial<ContractorProfile> {
+export function toContractorMePatch(
+  c: ApiContractor,
+): Partial<ContractorProfile> {
   return {
-    tipo: CONTRACTOR_FROM_API[c.type] ?? 'club',
+    tipo: CONTRACTOR_FROM_API[c.type] ?? "club",
     nome: c.name,
     telefone: maskPhone(c.phone),
     fotoUrl: c.avatarUrl ?? undefined,
@@ -304,19 +368,28 @@ interface ApiMedia {
   year?: number;
 }
 
-const MEDIA_TIPO_FROM_API: Record<string, AthleteMediaItem['tipo']> = {
-  VIDEO: 'video',
-  PHOTO: 'foto',
-  EXTERNAL_LINK: 'link',
+interface ApiSeasonStats {
+  year: number;
+  goals: number;
+  assists: number;
+  gamesPlayed: number;
+  minutesPlayed: number;
+  lastClub?: string | null;
+}
+
+const MEDIA_TIPO_FROM_API: Record<string, AthleteMediaItem["tipo"]> = {
+  VIDEO: "video",
+  PHOTO: "foto",
+  EXTERNAL_LINK: "link",
 };
 
 /** API media list → domain media items (preserva título/categoria/jogo). */
 export function toMediaItems(media?: ApiMedia[]): AthleteMediaItem[] {
   return (media ?? []).map((m) => ({
     id: m.id,
-    tipo: MEDIA_TIPO_FROM_API[m.mediaType] ?? 'link',
+    tipo: MEDIA_TIPO_FROM_API[m.mediaType] ?? "link",
     url: m.url,
-    titulo: m.title ?? 'Jogada',
+    titulo: m.title ?? "Jogada",
     categoria: m.category ?? undefined,
     subcategoria: m.subcategory ?? undefined,
     jogoInfo: m.gameInfo ?? undefined,
@@ -334,7 +407,9 @@ interface ApiPublicAthlete extends Partial<ApiAthlete> {
   height: number;
   weight: number;
   age?: number;
+  isFavorited?: boolean;
   media?: ApiMedia[];
+  seasonStats?: ApiSeasonStats[];
 }
 
 /**
@@ -344,42 +419,75 @@ interface ApiPublicAthlete extends Partial<ApiAthlete> {
 export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
   const media = toMediaItems(a.media);
   const videos = a.media?.map((m) => m.url) ?? [];
+  const seasons = a.seasonStats ?? [];
+  const latestSeason = seasons[0];
+  const hasLegacyStats =
+    a.goals != null ||
+    a.assists != null ||
+    a.gamesThisSeason != null ||
+    a.minutesPlayed != null ||
+    !!a.lastClub;
+  const stats = latestSeason
+    ? {
+        ano: latestSeason.year,
+        gols: latestSeason.goals,
+        assistencias: latestSeason.assists,
+        jogosNaTemporada: latestSeason.gamesPlayed,
+        minutosNaTemporada: latestSeason.minutesPlayed,
+        ultimoClube: latestSeason.lastClub ?? undefined,
+      }
+    : hasLegacyStats
+      ? {
+          gols: a.goals ?? undefined,
+          assistencias: a.assists ?? undefined,
+          jogosNaTemporada: a.gamesThisSeason ?? undefined,
+          minutosNaTemporada: a.minutesPlayed ?? undefined,
+          ultimoClube: a.lastClub ?? undefined,
+        }
+      : undefined;
 
   return {
     id: a.id,
-    role: 'athlete',
+    role: "athlete",
     nome: a.fullName,
-    email: '',
-    telefone: '',
+    email: "",
+    telefone: "",
     emailVerificado: true,
-    verificacao: 'verified',
+    verificacao: "verified",
     fotoUrl: a.avatarUrl ?? undefined,
     redeSocial: a.socialMedia ?? undefined,
+    informacoesAdicionais: a.additionalInfo ?? undefined,
     criadoEm: a.createdAt ?? new Date().toISOString(),
-    cpf: '',
-    dataNascimento: a.birthDate ?? '',
+    cpf: "",
+    dataNascimento: a.birthDate ?? "",
     idade: a.age ?? (a.birthDate ? ageFromBirthdate(a.birthDate) : 0),
-    naturalidade: a.naturalidade ?? '',
-    genero: GENDER_FROM_API[a.gender ?? ''] ?? 'masculino',
+    naturalidade: a.naturalidade ?? "",
+    genero: GENDER_FROM_API[a.gender ?? ""] ?? "masculino",
     posicao: positionFromApi(a.position),
     posicoes: positionsFromApi(a.positions, a.position),
-    peDominante: FOOT_FROM_API[a.dominantFoot] ?? 'direito',
+    peDominante: FOOT_FROM_API[a.dominantFoot] ?? "direito",
     alturaCm: a.height,
     pesoKg: a.weight,
     videos,
     media,
-    nivel: LEVEL_FROM_API[a.level] ?? 'profissional',
-    disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? 'livre',
-    agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? 'nao_agenciado',
+    nivel: LEVEL_FROM_API[a.level] ?? "profissional",
+    disponibilidade: AVAILABILITY_FROM_API[a.availability] ?? "livre",
+    agenciamento: AGENCY_FROM_API[a.agencyStatus] ?? "nao_agenciado",
     baseSalarial: a.expectedSalary != null ? Number(a.expectedSalary) : 0,
     numero: a.jerseyNumber ?? undefined,
-    stats: {
-      gols: a.goals ?? undefined,
-      assistencias: a.assists ?? undefined,
-      jogosNaTemporada: a.gamesThisSeason ?? undefined,
-      ultimoClube: a.lastClub ?? undefined,
-    },
+    perfilEsportivoUrl: a.sportsProfileUrl ?? undefined,
+    isFavorited: a.isFavorited,
+    stats,
+    trajetoria: seasons
+      .filter((season) => !!season.lastClub)
+      .map((season) => ({
+        ano: season.year,
+        clube: season.lastClub as string,
+        minutos: season.minutesPlayed,
+        gols: season.goals,
+      })),
   };
 }
 
-export type { ApiUser, ApiPublicAthlete };
+export type { ApiPublicAthlete, ApiUser };
+

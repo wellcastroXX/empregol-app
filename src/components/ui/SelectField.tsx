@@ -57,6 +57,15 @@ export function SelectField<T extends string>({
             </Text>
             <ScrollView bounces={false}>
               {options.map((option) => {
+                if (option.header) {
+                  return (
+                    <View key={option.value} style={styles.groupHeader}>
+                      <Text variant="eyebrow" color={colors.fgMuted}>
+                        {option.label}
+                      </Text>
+                    </View>
+                  );
+                }
                 const isSelected = option.value === value;
                 return (
                   <Pressable
@@ -127,5 +136,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.rule,
+  },
+  groupHeader: {
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
   },
 });

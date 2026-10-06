@@ -84,6 +84,10 @@ export function LoginScreen() {
           <TextField
             label="SENHA"
             secure
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="password"
+            textContentType="password"
             value={senha}
             onChangeText={setSenha}
             placeholder="••••••••"

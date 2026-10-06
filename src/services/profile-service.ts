@@ -1,21 +1,29 @@
-import { POSITIONS } from '@/constants/positions';
+import { POSITIONS } from "@/constants/positions";
 import type {
-  AthleteProfile,
-  AvailabilityStatus,
-  PlayerLevel,
-  Position,
-} from '@/types';
-import { athletesApi } from './api/athletes-api';
-import { toPublicAthleteProfile } from './api/mappers';
+    AthleteProfile,
+    AvailabilityStatus,
+    PlayerLevel,
+    Position,
+} from "@/types";
+import { athletesApi } from "./api/athletes-api";
+import { toPublicAthleteProfile } from "./api/mappers";
 
-const AVAILABILITY_TO_API: Record<AvailabilityStatus, string> = { livre: 'FREE', empregado: 'EMPLOYED' };
-const LEVEL_TO_API: Record<PlayerLevel, string> = { profissional: 'PROFESSIONAL', amador: 'AMATEUR', base: 'YOUTH' };
+const AVAILABILITY_TO_API: Record<AvailabilityStatus, string> = {
+  livre: "FREE",
+  empregado: "EMPLOYED",
+};
+const LEVEL_TO_API: Record<PlayerLevel, string> = {
+  profissional: "PROFESSIONAL",
+  amador: "AMATEUR",
+  base: "YOUTH",
+};
 
 export interface AthleteFilter {
   search?: string;
   posicao?: Position;
   nivel?: PlayerLevel;
   disponibilidade?: AvailabilityStatus;
+  limit?: number;
 }
 
 /** Read access to public athlete data, backed by the Empregol API. */
@@ -37,8 +45,11 @@ class ApiProfileService implements ProfileService {
     const result = await athletesApi.explore({
       q: filter.search,
       positions: short ? [short] : undefined,
-      availability: filter.disponibilidade ? AVAILABILITY_TO_API[filter.disponibilidade] : undefined,
+      availability: filter.disponibilidade
+        ? AVAILABILITY_TO_API[filter.disponibilidade]
+        : undefined,
       level: filter.nivel ? LEVEL_TO_API[filter.nivel] : undefined,
+      limit: filter.limit,
     });
     return result.athletes.map(toPublicAthleteProfile);
   }

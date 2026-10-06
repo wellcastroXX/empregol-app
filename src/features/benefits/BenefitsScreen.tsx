@@ -44,12 +44,15 @@ export function BenefitsScreen() {
         {BENEFITS.map((b) => (
           <Pressable
             key={b.key}
+            disabled={b.disabled}
             style={({ pressed }) => [
               styles.card,
+              b.disabled && styles.cardDisabled,
               pressed && styles.cardPressed,
             ]}
             onPress={() => setSelected(b)}
             accessibilityRole="button"
+            accessibilityState={{ disabled: !!b.disabled }}
           >
             <View style={styles.cardTop}>
               <View style={styles.iconTile}>
@@ -105,6 +108,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardPressed: { opacity: 0.75 },
+  cardDisabled: { opacity: 0.45 },
   cardTop: {
     flexDirection: "row",
     alignItems: "center",

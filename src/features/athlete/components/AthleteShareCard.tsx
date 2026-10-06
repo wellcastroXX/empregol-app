@@ -18,7 +18,12 @@ function metaLine(a: AthleteProfile): string {
   const status = STATUS_LABEL[a.disponibilidade] ?? "";
   const pos = POSITIONS.find((p) => p.value === a.posicao)?.short ?? "";
   const clube = a.stats?.ultimoClube?.trim();
-  return [status, pos, a.idade ? String(a.idade) : "", clube ? `EX-${clube.toUpperCase()}` : ""]
+  return [
+    status,
+    pos,
+    a.idade ? String(a.idade) : "",
+    clube?.toUpperCase() ?? "",
+  ]
     .filter(Boolean)
     .join("  ·  ");
 }
@@ -35,7 +40,11 @@ export const AthleteShareCard = forwardRef<View, { athlete: AthleteProfile }>(
     return (
       <View ref={ref} collapsable={false} style={styles.card}>
         {athlete.fotoUrl ? (
-          <Image source={{ uri: athlete.fotoUrl }} style={styles.photo} contentFit="cover" />
+          <Image
+            source={{ uri: athlete.fotoUrl }}
+            style={styles.photo}
+            contentFit="cover"
+          />
         ) : (
           <View style={[styles.photo, styles.fallback]}>
             <Text style={styles.fallbackInitials} color={palette.giz64}>
@@ -103,8 +112,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
+    top: 0,
     bottom: 0,
-    height: "55%",
     backgroundColor: "rgba(20,20,19,0.42)",
   },
   top: {

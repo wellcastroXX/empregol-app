@@ -1,7 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -108,7 +110,10 @@ export function EstatisticaEditModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <Pressable
           style={styles.backdropTap}
           onPress={onClose}
@@ -259,7 +264,7 @@ export function EstatisticaEditModal({
             </View>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

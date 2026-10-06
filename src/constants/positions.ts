@@ -14,6 +14,8 @@ export interface Option<T extends string> {
   label: string;
   /** short abbreviation for compact contexts (e.g. position badge). */
   short?: string;
+  /** Cabeçalho de grupo (não selecionável) numa lista de opções. */
+  header?: boolean;
 }
 
 export const POSITIONS: Option<Position>[] = [

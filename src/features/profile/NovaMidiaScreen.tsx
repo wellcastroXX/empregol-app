@@ -1,21 +1,22 @@
-import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Button, SelectField, TextField, Text } from '@/components/ui';
-import type { Option } from '@/constants/positions';
-import { useAuth } from '@/context/AuthContext';
-import { ApiError } from '@/services/api/client';
-import { mediaApi } from '@/services/api/media-api';
-import { colors, fontFamily, palette, radii, spacing } from '@/theme';
-import type { AthleteProfile } from '@/types';
+import { Button, SelectField, Text, TextField } from "@/components/ui";
+import type { Option } from "@/constants/positions";
+import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/services/api/client";
+import { mediaApi } from "@/services/api/media-api";
+import { colors, fontFamily, palette, radii, spacing } from "@/theme";
+import type { AthleteProfile } from "@/types";
 
-type MediaKind = 'video' | 'foto' | 'link';
+type MediaKind = "video" | "foto" | "link";
 
 /** A locally-picked file sent to the upload endpoint as multipart. */
 type PickedAsset = {
@@ -27,26 +28,57 @@ type PickedAsset = {
 };
 
 const TABS: { key: MediaKind; label: string }[] = [
-  { key: 'video', label: 'VÍDEO' },
-  { key: 'foto', label: 'FOTO' },
-  { key: 'link', label: 'LINK EXTERNO' },
+  { key: "video", label: "VÍDEO" },
+  { key: "foto", label: "FOTO" },
+  { key: "link", label: "LINK EXTERNO" },
 ];
 
 const CATEGORIAS: Option<string>[] = [
-  { value: 'gols', label: 'Gols' },
-  { value: 'assistencias', label: 'Assistências' },
-  { value: 'defesas', label: 'Defesas' },
-  { value: 'dribles', label: 'Dribles' },
-  { value: 'jogo_completo', label: 'Jogo completo' },
-  { value: 'treino', label: 'Treino' },
+  { value: "gols", label: "Gols" },
+  { value: "assistencias", label: "Assistências" },
+  { value: "defesas", label: "Defesas" },
+  { value: "dribles", label: "Dribles" },
+  { value: "jogo_completo", label: "Jogo completo" },
+  { value: "treino", label: "Treino" },
 ];
 
 const SUBCATEGORIAS: Option<string>[] = [
-  { value: 'cabeca', label: 'De cabeça' },
-  { value: 'falta', label: 'De falta' },
-  { value: 'penalti', label: 'Pênalti' },
-  { value: 'fora_area', label: 'Fora da área' },
-  { value: 'contra_ataque', label: 'Contra-ataque' },
+  {
+    value: "__ofensivas",
+    label: "A Ç Õ E S · O F E N S I V A S",
+    header: true,
+  },
+  { value: "gol", label: "Gol" },
+  { value: "assistencia", label: "Assistência" },
+  { value: "conducao_bola", label: "Condução de bola" },
+  { value: "passe", label: "Passe" },
+  { value: "dominio", label: "Domínio" },
+  { value: "cruzamento", label: "Cruzamento" },
+  { value: "lancamento", label: "Lançamento" },
+  { value: "finalizacao", label: "Finalização" },
+  { value: "saida_bola", label: "Saída de bola" },
+  { value: "cabeceio", label: "Cabeceio" },
+  { value: "duelo_1v1_ofensivo", label: "Duelo 1 contra 1" },
+
+  {
+    value: "__defensivas",
+    label: "A Ç Õ E S · D E F E N S I V A S",
+    header: true,
+  },
+  { value: "desarme", label: "Desarme" },
+  { value: "interceptacao", label: "Interceptação" },
+  { value: "duelo_aereo", label: "Duelo aéreo" },
+  { value: "corte", label: "Corte" },
+  { value: "bloqueio", label: "Bloqueio" },
+  { value: "antecipacao", label: "Antecipação" },
+  { value: "recuperacao_bola", label: "Recuperação de bola" },
+  { value: "duelo_1v1_defensivo", label: "Duelo 1 contra 1" },
+
+  { value: "__gerais", label: "A Ç Õ E S · G E R A I S", header: true },
+  { value: "velocidade_sprint", label: "Velocidade / sprint" },
+  { value: "movimentacao", label: "Movimentação" },
+  { value: "duelo_fisico", label: "Duelo físico" },
+  { value: "pressao_pos_perda", label: "Pressão pós perda" },
 ];
 
 /** bytes → "62 MB" (omitted when size is unknown). */
@@ -56,31 +88,35 @@ function formatSize(bytes?: number): string | null {
   return mb >= 1 ? `${mb.toFixed(0)} MB` : `${(bytes / 1000).toFixed(0)} KB`;
 }
 
-/** ms → "2:18". */
-function formatDuration(ms?: number | null): string | null {
-  if (!ms) return null;
-  const total = Math.round(ms / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
 /** Best-effort mime type: picker value → extension → kind fallback. */
-function resolveMime(a: ImagePicker.ImagePickerAsset, kind: 'video' | 'foto'): string {
+function resolveMime(
+  a: ImagePicker.ImagePickerAsset,
+  kind: "video" | "foto",
+): string {
   if (a.mimeType) return a.mimeType;
-  const ext = (a.fileName ?? a.uri).split('.').pop()?.toLowerCase();
+  const ext = (a.fileName ?? a.uri).split(".").pop()?.toLowerCase();
   const byExt: Record<string, string> = {
-    mp4: 'video/mp4', mov: 'video/quicktime', mkv: 'video/x-matroska', webm: 'video/webm',
-    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic',
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    mkv: "video/x-matroska",
+    webm: "video/webm",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    heic: "image/heic",
   };
   if (ext && byExt[ext]) return byExt[ext];
-  return kind === 'video' ? 'video/mp4' : 'image/jpeg';
+  return kind === "video" ? "video/mp4" : "image/jpeg";
 }
 
-function toAsset(a: ImagePicker.ImagePickerAsset, kind: 'video' | 'foto'): PickedAsset {
+function toAsset(
+  a: ImagePicker.ImagePickerAsset,
+  kind: "video" | "foto",
+): PickedAsset {
   return {
     uri: a.uri,
-    fileName: a.fileName ?? a.uri.split('/').pop() ?? 'mídia',
+    fileName: a.fileName ?? a.uri.split("/").pop() ?? "mídia",
     mimeType: resolveMime(a, kind),
     fileSize: a.fileSize,
     duration: a.duration,
@@ -88,25 +124,41 @@ function toAsset(a: ImagePicker.ImagePickerAsset, kind: 'video' | 'foto'): Picke
 }
 
 /** Pill toggle — green track when on, bone when off. */
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <Pressable
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
       onPress={() => onChange(!value)}
-      style={[styles.toggle, value ? styles.toggleOn : styles.toggleOff]}>
+      style={[styles.toggle, value ? styles.toggleOn : styles.toggleOff]}
+    >
       <View style={[styles.knob, value && styles.knobOn]} />
     </Pressable>
   );
 }
 
 /** Outline action button used inside the upload card (GRAVAR / GALERIA). */
-function UploadButton({ icon, label, onPress }: { icon: keyof typeof Feather.glyphMap; label: string; onPress?: () => void }) {
+function UploadButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  onPress?: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed]}>
+      style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed]}
+    >
       <Feather name={icon} size={16} color={colors.fg} />
       <Text style={styles.uploadBtnLabel} color={colors.fg}>
         {label}
@@ -119,7 +171,7 @@ function UploadButton({ icon, label, onPress }: { icon: keyof typeof Feather.gly
 export function NovaMidiaScreen() {
   const router = useRouter();
   const { user, updateUser } = useAuth();
-  const athlete = user?.role === 'athlete' ? (user as AthleteProfile) : null;
+  const athlete = user?.role === "athlete" ? (user as AthleteProfile) : null;
 
   // Modo edição: vem de "Minhas mídias" com os dados da mídia nos params.
   const params = useLocalSearchParams<{
@@ -132,19 +184,39 @@ export function NovaMidiaScreen() {
     url?: string;
     isPublic?: string;
   }>();
-  const editId = typeof params.id === 'string' ? params.id : undefined;
+  const editId = typeof params.id === "string" ? params.id : undefined;
   const initialTab: MediaKind =
-    params.mediaType === 'PHOTO' ? 'foto' : params.mediaType === 'EXTERNAL_LINK' ? 'link' : 'video';
+    params.mediaType === "PHOTO"
+      ? "foto"
+      : params.mediaType === "EXTERNAL_LINK"
+        ? "link"
+        : "video";
 
   const [tab, setTab] = useState<MediaKind>(initialTab);
-  const [titulo, setTitulo] = useState(params.title ?? '');
-  const [categoria, setCategoria] = useState<string | undefined>(params.category || undefined);
-  const [subcategoria, setSubcategoria] = useState<string | undefined>(params.subcategory || undefined);
-  const [jogoData, setJogoData] = useState(params.gameInfo ?? '');
-  const [link, setLink] = useState(params.mediaType === 'EXTERNAL_LINK' ? (params.url ?? '') : '');
-  const [visivel, setVisivel] = useState(params.isPublic ? params.isPublic === 'true' : true);
+  const [titulo, setTitulo] = useState(params.title ?? "");
+  const [categoria, setCategoria] = useState<string | undefined>(
+    params.category || undefined,
+  );
+  const [subcategoria, setSubcategoria] = useState<string | undefined>(
+    params.subcategory || undefined,
+  );
+  const [jogoData, setJogoData] = useState(params.gameInfo ?? "");
+  const [link, setLink] = useState(
+    params.mediaType === "EXTERNAL_LINK" ? (params.url ?? "") : "",
+  );
+  const [visivel, setVisivel] = useState(
+    params.isPublic ? params.isPublic === "true" : true,
+  );
   const [asset, setAsset] = useState<PickedAsset | null>(null);
   const [publishing, setPublishing] = useState(false);
+
+  // Player do preview — reproduz o vídeo escolhido (galeria ou câmera).
+  // O `useVideoPlayer` recria o player (via construtor, que suporta ph://, file://
+  // etc.) sempre que `videoUri` muda — não é preciso chamar replace() manualmente.
+  const videoUri = tab === "video" && asset ? asset.uri : null;
+  const player = useVideoPlayer(videoUri, (p) => {
+    p.loop = true;
+  });
 
   const switchTab = (next: MediaKind) => {
     if (next === tab) return;
@@ -153,39 +225,57 @@ export function NovaMidiaScreen() {
   };
 
   const pickFromLibrary = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert('Permissão necessária', 'Libere o acesso à galeria para escolher uma mídia.');
-      return;
+    try {
+      // PHPicker (iOS) não exige permissão de biblioteca e respeita "acesso
+      // limitado". Sem `videoMaxDuration` aqui → usa o picker moderno em grade;
+      // o limite de duração só se aplica à gravação (câmera).
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: tab === "video" ? ["videos"] : ["images"],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setAsset(toAsset(result.assets[0], tab === "video" ? "video" : "foto"));
+      }
+    } catch (err) {
+      Alert.alert(
+        "Não foi possível abrir a galeria",
+        err instanceof Error ? err.message : "Tente novamente.",
+      );
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: tab === 'video' ? ['videos'] : ['images'],
-      quality: 0.8,
-      videoMaxDuration: 120,
-    });
-    if (!result.canceled) setAsset(toAsset(result.assets[0], tab === 'video' ? 'video' : 'foto'));
   };
 
   const captureFromCamera = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert('Permissão necessária', 'Libere o acesso à câmera para gravar.');
-      return;
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Permissão necessária",
+          "Libere o acesso à câmera para gravar.",
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: tab === "video" ? ["videos"] : ["images"],
+        quality: 0.8,
+        videoMaxDuration: 120,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setAsset(toAsset(result.assets[0], tab === "video" ? "video" : "foto"));
+      }
+    } catch (err) {
+      Alert.alert(
+        "Não foi possível abrir a câmera",
+        err instanceof Error ? err.message : "Tente novamente.",
+      );
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: tab === 'video' ? ['videos'] : ['images'],
-      quality: 0.8,
-      videoMaxDuration: 120,
-    });
-    if (!result.canceled) setAsset(toAsset(result.assets[0], tab === 'video' ? 'video' : 'foto'));
   };
 
   // Editando arquivo (vídeo/foto): só metadados — o arquivo em si não é trocado.
-  const needsFile = !editId && tab !== 'link';
+  const needsFile = !editId && tab !== "link";
   const canPublish =
     !publishing &&
     titulo.trim().length > 0 &&
-    (tab === 'link' ? link.trim().length > 0 : !needsFile || asset != null);
+    (tab === "link" ? link.trim().length > 0 : !needsFile || asset != null);
 
   const publish = async () => {
     if (!athlete || !canPublish) return;
@@ -201,15 +291,22 @@ export function NovaMidiaScreen() {
     try {
       if (editId) {
         // Edição: atualiza metadados (e a URL, no caso de link externo).
-        await mediaApi.update(editId, tab === 'link' ? { ...meta, url: link.trim() } : meta);
+        await mediaApi.update(
+          editId,
+          tab === "link" ? { ...meta, url: link.trim() } : meta,
+        );
         router.back();
         return;
       }
       const created =
-        tab === 'link'
+        tab === "link"
           ? await mediaApi.addLink(link.trim(), meta)
           : await mediaApi.upload(
-              { uri: asset!.uri, fileName: asset!.fileName, mimeType: asset!.mimeType },
+              {
+                uri: asset!.uri,
+                fileName: asset!.fileName,
+                mimeType: asset!.mimeType,
+              },
               meta,
             );
       // Reflete na vitrine local na hora (a API é a fonte de verdade).
@@ -217,38 +314,60 @@ export function NovaMidiaScreen() {
       router.back();
     } catch (err) {
       setPublishing(false);
-      const message = err instanceof ApiError ? err.message : 'Tente novamente em instantes.';
-      Alert.alert(editId ? 'Não foi possível salvar' : 'Não foi possível publicar', message);
+      const message =
+        err instanceof ApiError ? err.message : "Tente novamente em instantes.";
+      Alert.alert(
+        editId ? "Não foi possível salvar" : "Não foi possível publicar",
+        message,
+      );
     }
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <StatusBar style="dark" />
 
       {/* Header */}
       <View style={styles.topBar}>
-        <Pressable hitSlop={8} onPress={() => router.back()} accessibilityRole="button">
+        <Pressable
+          hitSlop={8}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+        >
           <Text variant="eyebrow" color={colors.fg}>
             ‹ CANCELAR
           </Text>
         </Pressable>
-        <Pressable hitSlop={8} onPress={publish} disabled={!canPublish} accessibilityRole="button">
-          <Text variant="eyebrow" color={canPublish ? colors.accent : colors.fgMuted}>
-            {editId ? 'SALVAR ›' : 'PUBLICAR ›'}
+        <Pressable
+          hitSlop={8}
+          onPress={publish}
+          disabled={!canPublish}
+          accessibilityRole="button"
+        >
+          <Text
+            variant="eyebrow"
+            color={canPublish ? colors.accent : colors.fgMuted}
+          >
+            {editId ? "SALVAR ›" : "PUBLICAR ›"}
           </Text>
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Title block */}
         <View style={styles.intro}>
           <Text variant="eyebrow" color={colors.fgMuted}>
-            {editId ? 'E D I T A R · M Í D I A' : 'N O V A · M Í D I A'}
+            {editId ? "E D I T A R · M Í D I A" : "N O V A · M Í D I A"}
           </Text>
           <Text variant="displayMd" color={colors.fg}>
-            {editId ? 'Editar jogada' : 'Sobe a jogada'}
-            <Text variant="displayMd" color={colors.accent}>.</Text>
+            {editId ? "Editar jogada" : "Sobe a jogada"}
+            <Text variant="displayMd" color={colors.accent}>
+              .
+            </Text>
           </Text>
         </View>
 
@@ -262,8 +381,12 @@ export function NovaMidiaScreen() {
                 onPress={() => switchTab(t.key)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
-                style={[styles.tab, active && styles.tabActive]}>
-                <Text style={styles.tabLabel} color={active ? palette.giz : colors.fgMuted}>
+                style={[styles.tab, active && styles.tabActive]}
+              >
+                <Text
+                  style={styles.tabLabel}
+                  color={active ? palette.giz : colors.fgMuted}
+                >
                   {t.label}
                 </Text>
               </Pressable>
@@ -272,7 +395,7 @@ export function NovaMidiaScreen() {
         </View>
 
         {/* Upload area */}
-        {tab === 'link' ? (
+        {tab === "link" ? (
           <View style={styles.linkWrap}>
             <TextField
               label="LINK DO VÍDEO"
@@ -288,10 +411,18 @@ export function NovaMidiaScreen() {
           </View>
         ) : editId ? (
           <View style={styles.editNote}>
-            <Feather name={tab === 'foto' ? 'image' : 'video'} size={18} color={colors.fgMuted} />
-            <Text variant="sm" color={colors.fgMuted} style={styles.editNoteText}>
-              O arquivo enviado não pode ser trocado. Edite os dados abaixo ou remova a mídia em
-              "Minhas mídias".
+            <Feather
+              name={tab === "foto" ? "image" : "video"}
+              size={18}
+              color={colors.fgMuted}
+            />
+            <Text
+              variant="sm"
+              color={colors.fgMuted}
+              style={styles.editNoteText}
+            >
+              O arquivo enviado não pode ser trocado. Edite os dados abaixo ou
+              remova a mídia em "Minhas mídias".
             </Text>
           </View>
         ) : (
@@ -299,23 +430,27 @@ export function NovaMidiaScreen() {
             {asset ? (
               <>
                 {/* Real preview of the picked file */}
-                {tab === 'foto' ? (
-                  <Image source={{ uri: asset.uri }} style={styles.previewImage} contentFit="cover" />
+                {tab === "foto" ? (
+                  <Image
+                    source={{ uri: asset.uri }}
+                    style={styles.previewImage}
+                    contentFit="cover"
+                  />
                 ) : (
-                  <View style={styles.preview}>
-                    <View style={styles.playTriangle} />
-                    {formatDuration(asset.duration) && (
-                      <View style={styles.duration}>
-                        <Text style={styles.durationText} color={palette.giz}>
-                          {formatDuration(asset.duration)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
+                  <VideoView
+                    style={styles.previewImage}
+                    player={player}
+                    nativeControls
+                    contentFit="contain"
+                  />
                 )}
 
                 <View style={styles.fileRow}>
-                  <Text style={styles.fileName} color={colors.fg} numberOfLines={1}>
+                  <Text
+                    style={styles.fileName}
+                    color={colors.fg}
+                    numberOfLines={1}
+                  >
                     {asset.fileName}
                   </Text>
                   {formatSize(asset.fileSize) && (
@@ -324,7 +459,11 @@ export function NovaMidiaScreen() {
                     </Text>
                   )}
                 </View>
-                <Pressable hitSlop={6} onPress={() => setAsset(null)} accessibilityRole="button">
+                <Pressable
+                  hitSlop={6}
+                  onPress={() => setAsset(null)}
+                  accessibilityRole="button"
+                >
                   <Text style={styles.progressLabel} color={colors.fgMuted}>
                     REMOVER ›
                   </Text>
@@ -333,24 +472,44 @@ export function NovaMidiaScreen() {
             ) : (
               /* Empty state — nothing picked yet */
               <View style={styles.empty}>
-                <Feather name={tab === 'video' ? 'video' : 'image'} size={32} color={colors.fgMuted} />
+                <Feather
+                  name={tab === "video" ? "video" : "image"}
+                  size={32}
+                  color={colors.fgMuted}
+                />
                 <Text variant="bodyMedium" color={colors.fg}>
-                  {tab === 'video' ? 'Nenhum vídeo selecionado' : 'Nenhuma foto selecionada'}
+                  {tab === "video"
+                    ? "Nenhum vídeo selecionado"
+                    : "Nenhuma foto selecionada"}
                 </Text>
                 <Text variant="xs" color={colors.fgMuted}>
-                  {tab === 'video' ? 'Grave agora ou escolha da galeria.' : 'Tire uma foto ou escolha da galeria.'}
+                  {tab === "video"
+                    ? "Grave agora ou escolha da galeria."
+                    : "Tire uma foto ou escolha da galeria."}
                 </Text>
               </View>
             )}
 
             {/* Source buttons */}
             <View style={styles.uploadActions}>
-              {tab === 'video' ? (
-                <UploadButton icon="video" label="GRAVAR" onPress={captureFromCamera} />
+              {tab === "video" ? (
+                <UploadButton
+                  icon="video"
+                  label="GRAVAR"
+                  onPress={captureFromCamera}
+                />
               ) : (
-                <UploadButton icon="camera" label="CÂMERA" onPress={captureFromCamera} />
+                <UploadButton
+                  icon="camera"
+                  label="CÂMERA"
+                  onPress={captureFromCamera}
+                />
               )}
-              <UploadButton icon="upload" label="GALERIA" onPress={pickFromLibrary} />
+              <UploadButton
+                icon="upload"
+                label="GALERIA"
+                onPress={pickFromLibrary}
+              />
             </View>
           </View>
         )}
@@ -366,10 +525,20 @@ export function NovaMidiaScreen() {
 
         <View style={styles.row}>
           <View style={styles.col}>
-            <SelectField label="CATEGORIA" options={CATEGORIAS} value={categoria} onChange={setCategoria} />
+            <SelectField
+              label="CATEGORIA"
+              options={CATEGORIAS}
+              value={categoria}
+              onChange={setCategoria}
+            />
           </View>
           <View style={styles.col}>
-            <SelectField label="SUB-CATEGORIA" options={SUBCATEGORIAS} value={subcategoria} onChange={setSubcategoria} />
+            <SelectField
+              label="SUB-CATEGORIA"
+              options={SUBCATEGORIAS}
+              value={subcategoria}
+              onChange={setSubcategoria}
+            />
           </View>
         </View>
 
@@ -397,7 +566,7 @@ export function NovaMidiaScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <Button
-          label={editId ? 'SALVAR ALTERAÇÕES' : 'PUBLICAR NA VITRINE'}
+          label={editId ? "SALVAR ALTERAÇÕES" : "PUBLICAR NA VITRINE"}
           chevron
           fullWidth
           loading={publishing}
@@ -415,15 +584,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: '5%',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: "5%",
     paddingVertical: spacing.md,
   },
   editNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.md,
     backgroundColor: colors.bgSunken,
     borderRadius: radii.md,
@@ -433,15 +602,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: '5%',
-    paddingBottom: spacing['3xl'],
+    paddingHorizontal: "5%",
+    paddingBottom: spacing["3xl"],
     gap: spacing.xl,
   },
   intro: {
     gap: spacing.sm,
   },
   tabs: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.sm,
   },
   tab: {
@@ -459,54 +628,27 @@ const styles = StyleSheet.create({
   },
   uploadCard: {
     borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
     borderColor: colors.rule,
     borderRadius: radii.md,
     padding: spacing.lg,
     gap: spacing.md,
   },
   empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.xs,
-    paddingVertical: spacing['2xl'],
-  },
-  preview: {
-    height: 184,
-    borderRadius: radii.sm,
-    backgroundColor: palette.tinta,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: spacing["2xl"],
   },
   previewImage: {
     height: 184,
     borderRadius: radii.sm,
     backgroundColor: palette.tinta,
   },
-  playTriangle: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 16,
-    borderBottomWidth: 16,
-    borderLeftWidth: 26,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: palette.giz,
-  },
-  duration: {
-    position: 'absolute',
-    right: spacing.md,
-    bottom: spacing.md,
-  },
-  durationText: {
-    fontFamily: fontFamily.monoMedium,
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
-  },
   fileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.md,
   },
   fileName: {
@@ -517,7 +659,7 @@ const styles = StyleSheet.create({
   fileSize: {
     fontFamily: fontFamily.monoMedium,
     fontSize: 13,
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
   progressLabel: {
     fontFamily: fontFamily.monoMedium,
@@ -525,16 +667,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   uploadActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
     marginTop: spacing.xs,
   },
   uploadBtn: {
     flex: 1,
     height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
     borderWidth: 1,
     borderColor: colors.rule,
@@ -553,16 +695,16 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
   },
   col: {
     flex: 1,
   },
   visivelCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.md,
     backgroundColor: colors.bgElev,
     borderWidth: 1,
@@ -579,15 +721,15 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: radii.pill,
     padding: 3,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   toggleOn: {
     backgroundColor: palette.gramado,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   toggleOff: {
     backgroundColor: colors.bgSunken,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   knob: {
     width: 24,
@@ -599,7 +741,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.giz,
   },
   footer: {
-    paddingHorizontal: '5%',
+    paddingHorizontal: "5%",
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
     borderTopWidth: 1,

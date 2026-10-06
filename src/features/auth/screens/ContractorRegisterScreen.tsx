@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { RegisterHeader } from "@/features/auth/components/RegisterHeader";
+import { TermsAcceptance } from "@/features/auth/components/TermsAcceptance";
 import { AuthError } from "@/services";
 import { colors, spacing } from "@/theme";
 import type { ContractorKind } from "@/types";
@@ -52,6 +53,7 @@ export function ContractorRegisterScreen() {
   const [senha, setSenha] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleSubmit = async () => {
     setError(null);
@@ -208,11 +210,16 @@ export function ContractorRegisterScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        <TermsAcceptance
+          accepted={acceptedTerms}
+          onToggle={setAcceptedTerms}
+        />
         <Button
           label="VERIFICAR E CONTINUAR"
           chevron
           fullWidth
           loading={loading}
+          disabled={!acceptedTerms}
           onPress={handleSubmit}
         />
       </View>
@@ -248,5 +255,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     borderTopWidth: 1,
     borderTopColor: colors.rule,
+    gap: spacing.lg,
   },
 });

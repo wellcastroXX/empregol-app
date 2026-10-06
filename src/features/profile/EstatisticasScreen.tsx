@@ -230,9 +230,16 @@ export function EstatisticasScreen() {
                 </Text>
               </View>
 
-              <Text style={styles.year} color={colors.fg}>
-                {s.ano}
-              </Text>
+              <View style={styles.yearBlock}>
+                <Text style={styles.year} color={colors.fg}>
+                  {s.ano}
+                </Text>
+                {!!s.clube && (
+                  <Text style={styles.club} color={colors.fgMuted} numberOfLines={1}>
+                    {s.clube}
+                  </Text>
+                )}
+              </View>
 
               <View style={styles.grid}>
                 <StatLine label="GOLS" value={String(s.gols)} />
@@ -339,12 +346,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  yearBlock: {
+    gap: spacing.xs,
+  },
   year: {
     fontFamily: fontFamily.monoMedium,
     fontSize: 48,
     lineHeight: 50,
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],
+  },
+  club: {
+    fontFamily: fontFamily.textMedium,
+    fontSize: 15,
+    letterSpacing: 0.2,
   },
   grid: {
     flexDirection: 'row',

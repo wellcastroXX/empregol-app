@@ -1,6 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "@/components/ui";
@@ -20,11 +28,26 @@ export type BenefitSheetProps = {
 export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
   const insets = useSafeAreaInsets();
 
-  const onContact = () => {
-    Alert.alert(
-      benefit?.title ?? "Benefício",
-      "Em breve vamos te conectar com o profissional. Fica de olho!",
-    );
+  const onContact = async () => {
+    if (!benefit?.whatsappNumber) {
+      Alert.alert(
+        benefit?.title ?? "Benefício",
+        "O contato deste serviço ainda não está disponível.",
+      );
+      return;
+    }
+
+    const message = `Olá! Vim através da Empregol e gostaria de saber mais sobre o seu atendimento de ${benefit.title}. Sou atleta cadastrado na plataforma. Pode me passar as informações e a condição especial para usuários Empregol.`;
+    const url = `https://wa.me/${benefit.whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        "Não foi possível abrir o WhatsApp",
+        "Verifique se o WhatsApp está disponível neste aparelho.",
+      );
+    }
   };
 
   const hasImage = !!benefit?.image;
@@ -38,7 +61,11 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <Pressable style={styles.backdropTap} onPress={onClose} accessibilityLabel="Fechar" />
+        <Pressable
+          style={styles.backdropTap}
+          onPress={onClose}
+          accessibilityLabel="Fechar"
+        />
         <View style={styles.sheet}>
           {benefit && (
             <>
@@ -48,7 +75,25 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
                 showsVerticalScrollIndicator={false}
               >
                 {hasImage && (
-                  <Image source={benefit.image} style={styles.hero} contentFit="cover" />
+                  <Image
+                    source={benefit.image}
+                    style={[
+                      styles.hero,
+                      benefit.key === "financeiro" && styles.financeHero,
+                      benefit.key === "nutricionista" && styles.nutritionHero,
+                      benefit.key === "juridico" && styles.juridicoHero,
+                      benefit.key === "psicologo" && styles.psicologoHero,
+                    ]}
+                    contentFit="cover"
+                    contentPosition={
+                      benefit.key === "financeiro" ||
+                      benefit.key === "nutricionista" ||
+                      benefit.key === "juridico" ||
+                      benefit.key === "psicologo"
+                        ? "top"
+                        : undefined
+                    }
+                  />
                 )}
 
                 <View style={[styles.body, hasImage && styles.bodyOverlap]}>
@@ -63,7 +108,11 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
                     </Text>
                   </Text>
 
-                  <Text variant="body" color={palette.cinzaOnDark} style={styles.description}>
+                  <Text
+                    variant="body"
+                    color={palette.cinzaOnDark}
+                    style={styles.description}
+                  >
                     {benefit.description}
                   </Text>
 
@@ -78,7 +127,11 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
                         </Text>
                       )}
                       {!!benefit.professional.bio && (
-                        <Text variant="sm" color={palette.cinzaOnDark} style={styles.bio}>
+                        <Text
+                          variant="sm"
+                          color={palette.cinzaOnDark}
+                          style={styles.bio}
+                        >
                           {benefit.professional.bio}
                         </Text>
                       )}
@@ -92,9 +145,17 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
                         {benefit.bullets.map((b) => (
                           <View key={b} style={styles.bulletRow}>
                             <View style={styles.check}>
-                              <Feather name="check" size={12} color={palette.giz} />
+                              <Feather
+                                name="check"
+                                size={12}
+                                color={palette.giz}
+                              />
                             </View>
-                            <Text variant="bodyMedium" color={palette.giz} style={styles.bulletText}>
+                            <Text
+                              variant="bodyMedium"
+                              color={palette.giz}
+                              style={styles.bulletText}
+                            >
                               {b}
                             </Text>
                           </View>
@@ -110,9 +171,17 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
                 <View style={styles.handle} />
               </View>
 
-              <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+              <View
+                style={[
+                  styles.footer,
+                  { paddingBottom: insets.bottom + spacing.md },
+                ]}
+              >
                 <Pressable
-                  style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+                  style={({ pressed }) => [
+                    styles.cta,
+                    pressed && styles.ctaPressed,
+                  ]}
                   onPress={onContact}
                   accessibilityRole="button"
                 >
@@ -131,7 +200,11 @@ export function BenefitSheet({ benefit, onClose }: BenefitSheetProps) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(20,20,19,0.5)", justifyContent: "flex-end" },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(20,20,19,0.5)",
+    justifyContent: "flex-end",
+  },
   backdropTap: { flex: 1 },
   sheet: {
     height: "80%",
@@ -147,6 +220,10 @@ const styles = StyleSheet.create({
     height: 260,
     backgroundColor: palette.tintaElev,
   },
+  financeHero: { height: 340 },
+  nutritionHero: { height: 340 },
+  juridicoHero: { height: 340 },
+  psicologoHero: { height: 340 },
   body: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,

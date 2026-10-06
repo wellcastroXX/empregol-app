@@ -8,6 +8,11 @@ Criadas diretamente no banco com `emailVerified = true`.
 | ----- | -------------------------- | --------------- | ------------------------------------------------------ |
 | Clube | `saopaulo@empregolapp.com` | `SaoPaulo@2024` | São Paulo Futebol Clube S.A. · CNPJ 61.534.046/0001-34 |
 
+# Agora no ambiente do Agente/Clube
+
+- Agora para Agente/Clube, iremos mostrar uma seção acima de Videos no perfil do Atleta, com o Link preenchido pelo usuario do campo \*Transfermarkt/OGol, que ao clicar, direciona para um link externo no navegador do usuario.
+-
+
 ### Como criar nova conta verificada no banco
 
 ```bash

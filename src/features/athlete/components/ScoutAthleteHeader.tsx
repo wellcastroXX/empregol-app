@@ -1,32 +1,44 @@
-import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { StyleSheet, View } from "react-native";
 
-import { Tag, Text } from '@/components/ui';
-import { POSITIONS } from '@/constants/positions';
-import { fontFamily, jerseySize, palette, radii, spacing } from '@/theme';
-import type { AthleteProfile } from '@/types';
-import { initials as toInitials } from '@/utils';
+import { Tag, Text } from "@/components/ui";
+import { POSITIONS } from "@/constants/positions";
+import { fontFamily, jerseySize, palette, radii, spacing } from "@/theme";
+import type { AthleteProfile } from "@/types";
+import { initials as toInitials } from "@/utils";
 
 const PHOTO_W = 112;
 const PHOTO_H = 150;
 
-const FOOT_LABEL: Record<AthleteProfile['peDominante'], string> = {
-  esquerdo: 'CANHOTO',
-  direito: 'DESTRO',
-  ambidestro: 'AMBIDESTRO',
+const FOOT_LABEL: Record<AthleteProfile["peDominante"], string> = {
+  esquerdo: "CANHOTO",
+  direito: "DESTRO",
+  ambidestro: "AMBIDESTRO",
 };
 
 /** Light editorial header for the AGENT/CLUB view of an athlete — matches the reference. */
 export function ScoutAthleteHeader({ athlete }: { athlete: AthleteProfile }) {
-  const isVerified = athlete.verificacao === 'verified';
-  const isLivre = athlete.disponibilidade === 'livre';
-  const daysActive = Math.max(0, Math.floor((Date.now() - new Date(athlete.criadoEm).getTime()) / 86400000));
+  const isVerified = athlete.verificacao === "verified";
+  const isLivre = athlete.disponibilidade === "livre";
+  const daysActive = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(athlete.criadoEm).getTime()) / 86400000),
+  );
 
   const pos = POSITIONS.find((p) => p.value === athlete.posicao);
-  const positionLine = pos ? `${pos.short} · ${pos.label.toUpperCase()}` : athlete.posicao.toUpperCase();
-  const alturaM = `${(athlete.alturaCm / 100).toFixed(2)}M`;
-  const physical = `${athlete.idade} ANOS · ${alturaM}`;
+  const positionLine = pos
+    ? `${pos.short} · ${pos.label.toUpperCase()}`
+    : athlete.posicao.toUpperCase();
+  const physical =
+    [
+      Number.isFinite(athlete.idade) ? `${athlete.idade} ANOS` : null,
+      Number.isFinite(athlete.alturaCm)
+        ? `${(athlete.alturaCm / 100).toFixed(2)}M`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "-";
 
   return (
     <View style={styles.wrapper}>
@@ -34,7 +46,11 @@ export function ScoutAthleteHeader({ athlete }: { athlete: AthleteProfile }) {
       <View style={styles.heroRow}>
         <View style={styles.photoWrap}>
           {athlete.fotoUrl ? (
-            <Image source={{ uri: athlete.fotoUrl }} style={styles.photo} contentFit="cover" />
+            <Image
+              source={{ uri: athlete.fotoUrl }}
+              style={styles.photo}
+              contentFit="cover"
+            />
           ) : (
             <View style={[styles.photo, styles.photoFallback]}>
               <Text style={styles.initials} color={palette.giz}>
@@ -42,24 +58,35 @@ export function ScoutAthleteHeader({ athlete }: { athlete: AthleteProfile }) {
               </Text>
             </View>
           )}
-          {athlete.numero != null && (
-            <Text style={styles.jersey}>{String(athlete.numero).padStart(2, '0')}</Text>
-          )}
+          <Text style={styles.jersey}>
+            {pos?.short ?? athlete.posicao.toUpperCase()}
+          </Text>
         </View>
 
         <View style={styles.info}>
           <Text variant="eyebrow" color={palette.cinzaOnDark}>
-            {isVerified ? 'V E R I F I C A D O' : 'P E N D E N T E'}
+            {isVerified ? "V E R I F I C A D O" : "P E N D E N T E"}
           </Text>
-          <Text variant="h2" color={palette.giz} numberOfLines={2} style={styles.name}>
+          <Text
+            variant="h2"
+            color={palette.giz}
+            numberOfLines={2}
+            style={styles.name}
+          >
             {athlete.nome}
           </Text>
           <View style={styles.verifiedRow}>
-            <View style={[styles.checkDot, !isVerified && styles.checkDotPending]}>
-              <Feather name={isVerified ? 'check' : 'clock'} size={13} color={palette.giz} />
+            <View
+              style={[styles.checkDot, !isVerified && styles.checkDotPending]}
+            >
+              <Feather
+                name={isVerified ? "check" : "clock"}
+                size={13}
+                color={palette.giz}
+              />
             </View>
             <Text style={styles.verifiedText} color={palette.cinzaOnDark}>
-              {isVerified ? `VERIFICADO · ${daysActive}D` : 'AGUARDANDO'}
+              {isVerified ? `VERIFICADO · ${daysActive}D` : "AGUARDANDO"}
             </Text>
           </View>
         </View>
@@ -67,16 +94,33 @@ export function ScoutAthleteHeader({ athlete }: { athlete: AthleteProfile }) {
 
       {/* Status tags */}
       <View style={styles.tags}>
-        <Tag label={isLivre ? 'LIVRE' : 'EMPREGADO'} variant={isLivre ? 'live' : 'empregado'} dot={isLivre} size="md" />
-        <Tag label={athlete.nivel.toUpperCase()} variant="ghostLight" size="md" />
-        <Tag label={athlete.agenciamento === 'nao_agenciado' ? 'NÃO AGENCIADO' : 'AGENCIADO'} variant="ghostLight" size="md" />
+        <Tag
+          label={isLivre ? "LIVRE" : "EMPREGADO"}
+          variant={isLivre ? "live" : "empregado"}
+          dot={isLivre}
+          size="md"
+        />
+        <Tag
+          label={athlete.nivel.toUpperCase()}
+          variant="ghostLight"
+          size="md"
+        />
+        <Tag
+          label={
+            athlete.agenciamento === "nao_agenciado"
+              ? "NÃO AGENCIADO"
+              : "AGENCIADO"
+          }
+          variant="ghostLight"
+          size="md"
+        />
       </View>
 
       {/* Physical / position line */}
       <View style={styles.metaLines}>
         <Text style={styles.meta} color={palette.cinzaOnDark}>
           {positionLine}
-          {'    '}
+          {"    "}
           {physical}
         </Text>
         <Text style={styles.meta} color={palette.cinzaOnDark}>
@@ -89,14 +133,14 @@ export function ScoutAthleteHeader({ athlete }: { athlete: AthleteProfile }) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingHorizontal: '5%',
+    paddingHorizontal: "5%",
     paddingTop: spacing.lg,
     gap: spacing.lg,
   },
   heroRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.lg,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   photoWrap: {
     width: PHOTO_W,
@@ -109,25 +153,24 @@ const styles = StyleSheet.create({
     backgroundColor: palette.tinta,
   },
   photoFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   initials: {
     fontFamily: fontFamily.displayBold,
     fontSize: PHOTO_W * 0.34,
     lineHeight: PHOTO_W * 0.42,
-    textAlign: 'center',
+    textAlign: "center",
   },
   jersey: {
-    position: 'absolute',
+    position: "absolute",
     left: -4,
     bottom: -12,
     fontFamily: fontFamily.monoMedium,
-    fontSize: jerseySize.md,
-    lineHeight: jerseySize.md,
+    fontSize: jerseySize.sm,
+    lineHeight: jerseySize.sm + 2,
     color: palette.empregado,
-    letterSpacing: -4,
-    fontVariant: ['tabular-nums'] as const,
+    letterSpacing: 0.5,
     includeFontPadding: false,
   },
   info: {
@@ -139,8 +182,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   verifiedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
     marginTop: 2,
   },
@@ -154,15 +197,15 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: palette.gramado,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkDotPending: {
     backgroundColor: palette.warn,
   },
   tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
   metaLines: {
@@ -172,6 +215,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.monoMedium,
     fontSize: 11,
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 });

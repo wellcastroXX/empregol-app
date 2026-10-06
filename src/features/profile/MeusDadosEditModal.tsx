@@ -1,6 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import { Button, ChipGroup, Text, TextField } from "@/components/ui";
 import {
@@ -51,6 +59,7 @@ type Draft = {
   numero: string;
   altura: string; // meters, e.g. "1.85"
   peso: string;
+  perfilEsportivoUrl: string;
   salario: string;
   cpf: string;
   nascimento: string;
@@ -68,6 +77,7 @@ function toDraft(a: AthleteProfile): Draft {
     numero: a.numero != null ? String(a.numero) : "",
     altura: a.alturaCm ? (a.alturaCm / 100).toFixed(2) : "",
     peso: a.pesoKg ? String(a.pesoKg) : "",
+    perfilEsportivoUrl: a.perfilEsportivoUrl ?? "",
     salario: a.baseSalarial ? String(a.baseSalarial) : "",
     cpf: a.cpf ?? "",
     nascimento: a.dataNascimento ?? "",
@@ -142,6 +152,7 @@ export function MeusDadosEditModal({
           numero: draft.numero ? int(draft.numero) : undefined,
           alturaCm: metersToCm(draft.altura),
           pesoKg: int(draft.peso),
+          perfilEsportivoUrl: draft.perfilEsportivoUrl.trim(),
         });
         break;
       case "salario":
@@ -167,7 +178,10 @@ export function MeusDadosEditModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <Pressable
           style={styles.backdropTap}
           onPress={onClose}
@@ -277,6 +291,15 @@ export function MeusDadosEditModal({
                   placeholder="78"
                   mono
                 />
+                <TextField
+                  label="Link do seu perfil esportivo"
+                  hint="Opcional · visível p/ clubes"
+                  value={draft.perfilEsportivoUrl}
+                  onChangeText={(v) => patch({ perfilEsportivoUrl: v })}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  placeholder="Transfermarkt/OGol ou outro"
+                />
               </>
             )}
 
@@ -333,7 +356,7 @@ export function MeusDadosEditModal({
             <Button label="SALVAR" chevron fullWidth onPress={save} />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

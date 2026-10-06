@@ -16,16 +16,17 @@ export function AthleteCard({
 }) {
   const availability = availabilityTag(athlete.disponibilidade);
   const pos = labelOf(POSITIONS, athlete.posicao);
+  const posShort = POSITIONS.find((p) => p.value === athlete.posicao)?.short ?? pos;
   const altura = `${(athlete.alturaCm / 100).toFixed(2).replace('.', ',')}m`;
   const lastClub = athlete.stats?.ultimoClube;
-  const meta = [pos, `${athlete.idade} anos`, altura, lastClub && `Ex-${lastClub}`]
+  const meta = [pos, `${athlete.idade} anos`, altura, lastClub]
     .filter(Boolean)
     .join(' · ');
 
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.row}>
       <Text style={styles.jersey} color={colors.fg}>
-        {String(athlete.numero ?? 0).padStart(2, '0')}
+        {posShort}
       </Text>
 
       <View style={styles.body}>
@@ -74,12 +75,11 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.rule,
   },
   jersey: {
-    width: 44,
+    width: 56,
     fontFamily: fontFamily.monoMedium,
-    fontSize: 32,
-    lineHeight: 34,
-    letterSpacing: -1,
-    fontVariant: ['tabular-nums'],
+    fontSize: 24,
+    lineHeight: 28,
+    letterSpacing: 0,
   },
   body: {
     flex: 1,

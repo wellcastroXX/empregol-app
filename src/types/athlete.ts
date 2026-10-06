@@ -1,35 +1,35 @@
-import type { BaseUser } from './user';
+import type { BaseUser } from "./user";
 
 /** Playing position (pt-BR labels + abbreviations live in `constants/positions.ts`). */
 export type Position =
-  | 'goleiro' // GOL
-  | 'zagueiro' // ZAG
-  | 'lateral_direito' // LAD
-  | 'lateral_esquerdo' // LAE
-  | 'volante' // VOL
-  | 'meia_central' // MC
-  | 'meia_esquerda' // ME
-  | 'meia_direita' // MD
-  | 'meia_ofensivo' // MCO
-  | 'ala' // ALA
-  | 'atacante' // ATA
-  | 'ponta_direita' // PD
-  | 'ponta_esquerda' // PE
-  | 'centroavante'; // CA
+  | "goleiro" // GOL
+  | "zagueiro" // ZAG
+  | "lateral_direito" // LAD
+  | "lateral_esquerdo" // LAE
+  | "volante" // VOL
+  | "meia_central" // MC
+  | "meia_esquerda" // ME
+  | "meia_direita" // MD
+  | "meia_ofensivo" // MCO
+  | "ala" // ALA
+  | "atacante" // ATA
+  | "ponta_direita" // PD
+  | "ponta_esquerda" // PE
+  | "centroavante"; // CA
 
-export type DominantFoot = 'direito' | 'esquerdo' | 'ambidestro';
+export type DominantFoot = "direito" | "esquerdo" | "ambidestro";
 
 /** Gender — used for filtering / category browsing in the vitrine. */
-export type Genero = 'masculino' | 'feminino';
+export type Genero = "masculino" | "feminino";
 
 /** Competitive level. */
-export type PlayerLevel = 'profissional' | 'amador' | 'base';
+export type PlayerLevel = "profissional" | "amador" | "base";
 
 /** Availability — `livre` shows green, `empregado` shows red (per spec). */
-export type AvailabilityStatus = 'livre' | 'empregado';
+export type AvailabilityStatus = "livre" | "empregado";
 
 /** Whether the athlete is represented by an agent. */
-export type AgencyStatus = 'agenciado' | 'nao_agenciado';
+export type AgencyStatus = "agenciado" | "nao_agenciado";
 
 /** Optional performance stats (current/most-recent season). */
 export interface AthleteStats {
@@ -55,7 +55,7 @@ export interface CareerEntry {
 /** A published vitrine media item (video file, photo, or external link). */
 export interface AthleteMediaItem {
   id?: string;
-  tipo: 'video' | 'foto' | 'link';
+  tipo: "video" | "foto" | "link";
   url: string;
   titulo: string;
   categoria?: string;
@@ -71,7 +71,7 @@ export interface AthleteMediaItem {
  * everything outside `stats`, `redeSocial`, `informacoesAdicionais` is mandatory.
  */
 export interface AthleteProfile extends BaseUser {
-  role: 'athlete';
+  role: "athlete";
 
   // Obrigatórios
   cpf: string;
@@ -95,8 +95,12 @@ export interface AthleteProfile extends BaseUser {
   // Opcionais
   /** Número da camisa — o artefato icônico da marca (exibido grande, em mono). */
   numero?: number;
+  /** Link do perfil esportivo externo (Transfermarkt/OGol ou outro). */
+  perfilEsportivoUrl?: string;
   stats?: AthleteStats;
   trajetoria?: CareerEntry[];
   /** Mídias da vitrine com metadados (preserva título, categoria, jogo, etc.). */
   media?: AthleteMediaItem[];
+  /** Estado de favorito do contratante autenticado, quando fornecido pela API. */
+  isFavorited?: boolean;
 }

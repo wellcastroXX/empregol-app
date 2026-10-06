@@ -1,31 +1,64 @@
-import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { Button, EmptyState, Text, Toast } from '@/components/ui';
-import { useAuth } from '@/context/AuthContext';
-import { conversationsApi } from '@/services/api/conversations-api';
-import { AvatarSheet } from '@/features/profile/AvatarSheet';
-import { ShareProfileSheet } from '../components/ShareProfileSheet';
-import { mediaApi } from '@/services/api/media-api';
-import { toMediaItems } from '@/services/api/mappers';
-import { profileService } from '@/services';
-import { colors, palette, radii, spacing } from '@/theme';
-import { POSITIONS } from '@/constants/positions';
-import type { AthleteMediaItem, AthleteProfile } from '@/types';
+import {
+  Button,
+  EmptyState,
+  FavoriteButton,
+  Text,
+  Toast,
+} from "@/components/ui";
+import { POSITIONS } from "@/constants/positions";
+import { useAuth } from "@/context/AuthContext";
+import { useGlobalLoading } from "@/context/GlobalLoadingContext";
+import { AvatarSheet } from "@/features/profile/AvatarSheet";
+import { profileService } from "@/services";
+import { conversationsApi } from "@/services/api/conversations-api";
+import { favoritesApi } from "@/services/api/favorites-api";
+import { toMediaItems } from "@/services/api/mappers";
+import { mediaApi } from "@/services/api/media-api";
+import { colors, palette, radii, spacing } from "@/theme";
+import type { AthleteMediaItem, AthleteProfile } from "@/types";
 import {
   AthleteAboutSection,
   AthleteStats,
   OwnAthleteHeader,
   PersonalDataSection,
   ScoutAthleteHeader,
-  ScoutPersonalDataCard,
+  // ScoutPersonalDataCard, // oculto no ambiente Agente/Clube (a pedido)
   TrajetoriaSection,
   VideoThumbs,
-} from '../components';
+} from "../components";
+import { ShareProfileSheet } from "../components/ShareProfileSheet";
+
+/** URL amigável p/ exibição: sem protocolo nem barra final. */
+const prettyUrl = (raw: string) =>
+  raw.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+
+/** Abre o link externo no navegador (adiciona https:// se faltar). */
+async function openExternal(raw: string) {
+  const url = /^https?:\/\//i.test(raw.trim()) ? raw.trim() : `https://${raw.trim()}`;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Link indisponível", "Não foi possível abrir este link.");
+  }
+}
 
 /**
  * Fallback: URLs sem metadados → itens mínimos. Ignora URIs locais (file://,
@@ -35,9 +68,9 @@ function videosToItems(videos: string[]): AthleteMediaItem[] {
   return videos
     .filter((url) => !/^(file|content):/i.test(url.trim()))
     .map((url, i) => ({
-      tipo: 'link',
+      tipo: "link",
       url,
-      titulo: `Jogada ${String(i + 1).padStart(2, '0')}`,
+      titulo: `Jogada ${String(i + 1).padStart(2, "0")}`,
     }));
 }
 
@@ -58,14 +91,25 @@ export function AthleteProfileScreen({
 }: AthleteProfileScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signOut } = useAuth();
-  const [athlete, setAthlete] = useState<AthleteProfile | null>(provided ?? null);
+  const { runWithGlobalLoading } = useGlobalLoading();
+  const { signOut, user } = useAuth();
+  const [athlete, setAthlete] = useState<AthleteProfile | null>(
+    provided ?? null,
+  );
   const [loading, setLoading] = useState(!provided);
+  const [loadError, setLoadError] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoriteActionLoading, setFavoriteActionLoading] = useState(false);
+  const [favoriteStatusLoaded, setFavoriteStatusLoaded] = useState(false);
   const [ownMedia, setOwnMedia] = useState<AthleteMediaItem[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [shareSheet, setShareSheet] = useState(false);
-  const [toast, setToast] = useState<{ message: string; tone: 'success' | 'danger' } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: "success" | "danger";
+  } | null>(null);
 
   // Perfil próprio: reflete atualizações do usuário (ex.: após publicar mídia).
   useEffect(() => {
@@ -87,15 +131,49 @@ export function AthleteProfileScreen({
     }, [scout]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!scout || user?.role !== "contractor" || !athleteId) return;
+      let active = true;
+      setFavoriteLoading(true);
+      favoritesApi
+        .list()
+        .then((favorites) => {
+          if (!active) return;
+          setIsFavorited(
+            favorites.some((favorite) => favorite.id === athleteId),
+          );
+          setFavoriteStatusLoaded(true);
+        })
+        .catch(() => {
+          if (active) {
+            Alert.alert(
+              "Favoritos indisponíveis",
+              "Não foi possível carregar seus favoritos.",
+            );
+          }
+        })
+        .finally(() => active && setFavoriteLoading(false));
+      return () => {
+        active = false;
+      };
+    }, [athleteId, scout, user?.role]),
+  );
+
   useEffect(() => {
     if (provided || !athleteId) return;
     let active = true;
-    profileService.getAthlete(athleteId).then((data) => {
-      if (active) {
-        setAthlete(data);
-        setLoading(false);
-      }
-    });
+    profileService
+      .getAthlete(athleteId)
+      .then((data) => {
+        if (active) setAthlete(data);
+      })
+      .catch(() => {
+        if (active) setLoadError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -114,8 +192,12 @@ export function AthleteProfileScreen({
       <SafeAreaView style={styles.safe}>
         <EmptyState
           icon="user-x"
-          title="Atleta não encontrado.."
-          message="Este perfil pode ter saído de campo."
+          title={loadError ? "Perfil indisponível." : "Atleta não encontrado."}
+          message={
+            loadError
+              ? "Não foi possível carregar os dados agora."
+              : "Este perfil pode ter saído de campo."
+          }
         />
       </SafeAreaView>
     );
@@ -132,7 +214,7 @@ export function AthleteProfileScreen({
     try {
       const conv = await conversationsApi.open(athlete.id);
       router.push({
-        pathname: '/conversas/[id]',
+        pathname: "/conversas/[id]",
         params: { id: conv.id, name: athlete.nome, subtitle: posLabel },
       });
     } finally {
@@ -140,10 +222,30 @@ export function AthleteProfileScreen({
     }
   }
 
+  async function toggleFavorite() {
+    if (
+      !athlete?.id ||
+      favoriteLoading ||
+      favoriteActionLoading ||
+      !favoriteStatusLoaded
+    )
+      return;
+    setFavoriteActionLoading(true);
+    try {
+      setIsFavorited(
+        await runWithGlobalLoading(() => favoritesApi.toggle(athlete.id)),
+      );
+    } catch {
+      Alert.alert("Não foi possível atualizar", "Tente favoritar novamente.");
+    } finally {
+      setFavoriteActionLoading(false);
+    }
+  }
+
   function handleSignOut() {
-    Alert.alert('Sair da conta', 'Tem certeza que deseja sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: () => signOut() },
+    Alert.alert("Sair da conta", "Tem certeza que deseja sair?", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Sair", style: "destructive", onPress: () => signOut() },
     ]);
   }
 
@@ -152,17 +254,23 @@ export function AthleteProfileScreen({
     return (
       <View style={styles.ownRoot}>
         <StatusBar style="light" />
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.ownScroll}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.ownScroll}
+        >
           <OwnAthleteHeader
             athlete={athlete}
             insetsTop={insets.top}
             onUpdatePhoto={() => setAvatarSheet(true)}
-            onUpdateData={() => router.push('/meus-dados')}
+            onUpdateData={() => router.push("/meus-dados")}
             onShare={() => setShareSheet(true)}
           />
 
           <View style={styles.ownBody}>
-            <AthleteStats athlete={athlete} onPressClube={() => router.push('/estatisticas')} />
+            <AthleteStats
+              athlete={athlete}
+              onPressClube={() => router.push("/estatisticas")}
+            />
             {showPersonalData && <PersonalDataSection athlete={athlete} />}
             <TrajetoriaSection entries={athlete.trajetoria} />
             <VideoThumbs
@@ -172,8 +280,14 @@ export function AthleteProfileScreen({
               emptyMessage="Suba suas melhores jogadas. É o que clubes veem primeiro."
             />
 
-            <Pressable onPress={handleSignOut} style={styles.logoutRow} accessibilityRole="button">
-              <Text variant="sm" color={colors.statusEmpregado}>Sair da conta ›</Text>
+            <Pressable
+              onPress={handleSignOut}
+              style={styles.logoutRow}
+              accessibilityRole="button"
+            >
+              <Text variant="sm" color={colors.statusEmpregado}>
+                Sair da conta ›
+              </Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -184,9 +298,12 @@ export function AthleteProfileScreen({
           hasPhoto={!!athlete.fotoUrl}
           onSuccess={(fotoUrl) => {
             setAthlete((prev) => (prev ? { ...prev, fotoUrl } : prev));
-            setToast({ message: fotoUrl ? 'Foto atualizada!' : 'Foto removida.', tone: 'success' });
+            setToast({
+              message: fotoUrl ? "Foto atualizada!" : "Foto removida.",
+              tone: "success",
+            });
           }}
-          onError={(message) => setToast({ message, tone: 'danger' })}
+          onError={(message) => setToast({ message, tone: "danger" })}
         />
         <ShareProfileSheet
           visible={shareSheet}
@@ -204,20 +321,37 @@ export function AthleteProfileScreen({
 
   // ── Scout view (AGENT/CLUB looking at an athlete) — dark ──
   return (
-    <SafeAreaView style={styles.scoutSafe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.scoutSafe} edges={["top", "left", "right"]}>
       <StatusBar style="light" />
       {/* Header */}
       <View style={styles.topBar}>
-        <Pressable hitSlop={8} onPress={() => router.back()} accessibilityRole="button">
-          <Text variant="eyebrow" color={palette.giz}>‹ VOLTAR</Text>
+        <Pressable
+          hitSlop={8}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+        >
+          <Text variant="eyebrow" color={palette.giz}>
+            ‹ VOLTAR
+          </Text>
         </Pressable>
         <View style={styles.topActions}>
-          <Feather name="star" size={18} color={palette.giz} />
+          <FavoriteButton
+            favorited={isFavorited}
+            disabled={
+              favoriteLoading || favoriteActionLoading || !favoriteStatusLoaded
+            }
+            size={18}
+            inactiveColor={palette.giz}
+            onPress={toggleFavorite}
+          />
           <Feather name="more-horizontal" size={20} color={palette.giz} />
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
         {/* Light editorial hero */}
         <ScoutAthleteHeader athlete={athlete} />
 
@@ -225,10 +359,46 @@ export function AthleteProfileScreen({
         <View style={styles.body}>
           <AthleteAboutSection athlete={athlete} />
           <AthleteStats athlete={athlete} showClub={false} dark />
-          <ScoutPersonalDataCard athlete={athlete} />
+          {/* Dados pessoais ocultos no ambiente Agente/Clube (comentado a pedido). */}
+          {/* <ScoutPersonalDataCard athlete={athlete} /> */}
           <TrajetoriaSection entries={athlete.trajetoria} dark />
+          {!!athlete.perfilEsportivoUrl?.trim() && (
+            <View style={styles.linkSection}>
+              <Text variant="eyebrow" color={palette.cinzaOnDark}>
+                P E R F I L · E S P O R T I V O
+              </Text>
+              <Pressable
+                onPress={() => openExternal(athlete.perfilEsportivoUrl!)}
+                accessibilityRole="link"
+                accessibilityLabel="Abrir perfil esportivo externo"
+                style={({ pressed }) => [
+                  styles.linkRow,
+                  pressed && styles.linkPressed,
+                ]}
+              >
+                <Feather name="external-link" size={18} color={palette.gramado} />
+                <Text
+                  variant="smMedium"
+                  color={palette.giz}
+                  numberOfLines={1}
+                  style={styles.linkText}
+                >
+                  {prettyUrl(athlete.perfilEsportivoUrl)}
+                </Text>
+                <Feather
+                  name="chevron-right"
+                  size={18}
+                  color={palette.cinzaOnDark}
+                />
+              </Pressable>
+            </View>
+          )}
           <VideoThumbs
-            media={athlete.media?.length ? athlete.media : videosToItems(athlete.videos)}
+            media={
+              athlete.media?.length
+                ? athlete.media
+                : videosToItems(athlete.videos)
+            }
             photoUrl={athlete.fotoUrl}
             jerseyNumber={athlete.numero}
             dark
@@ -246,12 +416,16 @@ export function AthleteProfileScreen({
             loading={chatLoading}
             onPress={openChat}
           />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Favoritar"
-            style={({ pressed }) => [styles.starBtn, pressed && styles.starBtnPressed]}>
-            <Feather name="star" size={20} color={colors.fg} />
-          </Pressable>
+          <FavoriteButton
+            favorited={isFavorited}
+            disabled={
+              favoriteLoading || favoriteActionLoading || !favoriteStatusLoaded
+            }
+            size={20}
+            inactiveColor={colors.bg}
+            style={styles.starBtn}
+            onPress={toggleFavorite}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -273,45 +447,64 @@ const styles = StyleSheet.create({
   },
   ownScroll: {
     flexGrow: 1,
-    paddingBottom: spacing['4xl'],
+    paddingBottom: spacing["4xl"],
     backgroundColor: colors.bg,
   },
   ownBody: {
     flexGrow: 1,
     backgroundColor: colors.bg,
-    paddingHorizontal: '5%',
-    paddingTop: spacing['2xl'],
-    gap: spacing['2xl'],
+    paddingHorizontal: "5%",
+    paddingTop: spacing["2xl"],
+    gap: spacing["2xl"],
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.bg,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: '5%',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: "5%",
     paddingVertical: spacing.md,
   },
   topActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.lg,
   },
   scroll: {
-    paddingBottom: spacing['4xl'],
+    paddingBottom: spacing["4xl"],
   },
   body: {
-    paddingHorizontal: '5%',
-    paddingTop: spacing['2xl'],
-    gap: spacing['2xl'],
+    paddingHorizontal: "5%",
+    paddingTop: spacing["2xl"],
+    gap: spacing["2xl"],
+  },
+  linkSection: {
+    gap: spacing.md,
+  },
+  linkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: palette.tintaElev,
+    borderWidth: 1,
+    borderColor: palette.ruleOnDark,
+    borderRadius: radii.md,
+    padding: spacing.md,
+  },
+  linkText: {
+    flex: 1,
+  },
+  linkPressed: {
+    opacity: 0.6,
   },
   logoutRow: {
     paddingVertical: spacing.sm,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footer: {
     padding: spacing.lg,
@@ -320,8 +513,8 @@ const styles = StyleSheet.create({
     backgroundColor: palette.tinta,
   },
   ctaRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
+    flexDirection: "row",
+    alignItems: "stretch",
     gap: spacing.md,
   },
   ctaBtn: {
@@ -333,8 +526,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1.5,
     borderColor: palette.giz64,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   starBtnPressed: {
     opacity: 0.7,
