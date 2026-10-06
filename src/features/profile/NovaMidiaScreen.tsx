@@ -1,11 +1,20 @@
 import { Feather } from "@expo/vector-icons";
+import { File } from "expo-file-system";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { Video as VideoCompressor } from "react-native-compressor";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button, SelectField, Text, TextField } from "@/components/ui";
@@ -80,6 +89,22 @@ const SUBCATEGORIAS: Option<string>[] = [
   { value: "duelo_fisico", label: "Duelo físico" },
   { value: "pressao_pos_perda", label: "Pressão pós perda" },
 ];
+
+/** Limite de upload por arquivo (bate com MAX_UPLOAD_MB do backend + Cloudflare). */
+const MAX_UPLOAD_MB = 100;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+
+/** Garante o esquema file:// (o compressor pode retornar um caminho cru). */
+const toFileUri = (p: string) => (p.includes("://") ? p : `file://${p}`);
+
+/** Tamanho do arquivo em bytes (null se não der pra ler). */
+function fileBytes(uri: string): number | null {
+  try {
+    return new File(toFileUri(uri)).size ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /** bytes → "62 MB" (omitted when size is unknown). */
 function formatSize(bytes?: number): string | null {
@@ -209,6 +234,8 @@ export function NovaMidiaScreen() {
   );
   const [asset, setAsset] = useState<PickedAsset | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Player do preview — reproduz o vídeo escolhido (galeria ou câmera).
   // O `useVideoPlayer` recria o player (via construtor, que suporta ph://, file://
@@ -224,6 +251,61 @@ export function NovaMidiaScreen() {
     setAsset(null);
   };
 
+  const alertLimit = (blocked: boolean) =>
+    Alert.alert(
+      blocked ? "Vídeo acima do limite" : "Atenção",
+      blocked
+        ? "Limite de 100 MB por vídeo. Mesmo após a compressão o arquivo ficou acima de 100 MB — grave um clipe mais curto ou reduza a qualidade."
+        : "Limite de 100 MB por vídeo.",
+    );
+
+  /**
+   * Recebe o arquivo escolhido. Foto → direto. Vídeo → avisa do limite, comprime
+   * e valida: se mesmo comprimido ficar acima de 100 MB, bloqueia (não aceita).
+   */
+  const acceptPicked = async (
+    a: ImagePicker.ImagePickerAsset,
+    kind: "video" | "foto",
+  ) => {
+    if (kind === "foto") {
+      setAsset(toAsset(a, "foto"));
+      return;
+    }
+    // Aviso do limite logo que o vídeo entra no fluxo de upload.
+    alertLimit(false);
+    setPreparing(true);
+    setProgress(0);
+    try {
+      const compressedUri = await VideoCompressor.compress(
+        a.uri,
+        { compressionMethod: "auto" },
+        (p) => setProgress(Math.round(p * 100)),
+      );
+      const bytes = fileBytes(compressedUri) ?? a.fileSize ?? null;
+      if (bytes != null && bytes > MAX_UPLOAD_BYTES) {
+        alertLimit(true);
+        setAsset(null);
+        return;
+      }
+      setAsset({
+        ...toAsset(a, "video"),
+        uri: toFileUri(compressedUri),
+        fileSize: bytes ?? undefined,
+      });
+    } catch {
+      // Compressão falhou → valida o original; usa só se couber no limite.
+      const bytes = a.fileSize ?? null;
+      if (bytes != null && bytes > MAX_UPLOAD_BYTES) {
+        alertLimit(true);
+        setAsset(null);
+        return;
+      }
+      setAsset(toAsset(a, "video"));
+    } finally {
+      setPreparing(false);
+    }
+  };
+
   const pickFromLibrary = async () => {
     try {
       // PHPicker (iOS) não exige permissão de biblioteca e respeita "acesso
@@ -234,7 +316,7 @@ export function NovaMidiaScreen() {
         quality: 0.8,
       });
       if (!result.canceled && result.assets[0]) {
-        setAsset(toAsset(result.assets[0], tab === "video" ? "video" : "foto"));
+        await acceptPicked(result.assets[0], tab === "video" ? "video" : "foto");
       }
     } catch (err) {
       Alert.alert(
@@ -260,7 +342,7 @@ export function NovaMidiaScreen() {
         videoMaxDuration: 120,
       });
       if (!result.canceled && result.assets[0]) {
-        setAsset(toAsset(result.assets[0], tab === "video" ? "video" : "foto"));
+        await acceptPicked(result.assets[0], tab === "video" ? "video" : "foto");
       }
     } catch (err) {
       Alert.alert(
@@ -570,10 +652,19 @@ export function NovaMidiaScreen() {
           chevron
           fullWidth
           loading={publishing}
-          disabled={!canPublish}
+          disabled={!canPublish || preparing}
           onPress={publish}
         />
       </View>
+
+      {preparing && (
+        <View style={styles.compressOverlay} pointerEvents="auto">
+          <ActivityIndicator color={palette.giz} size="large" />
+          <Text variant="bodyMedium" color={palette.giz} style={styles.compressText}>
+            Comprimindo vídeo… {progress}%
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -746,5 +837,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     borderTopWidth: 1,
     borderTopColor: colors.rule,
+  },
+  compressOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(20,20,19,0.78)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+  },
+  compressText: {
+    letterSpacing: 0.3,
   },
 });

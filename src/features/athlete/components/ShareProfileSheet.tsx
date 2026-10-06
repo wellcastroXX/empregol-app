@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -99,7 +100,7 @@ export function ShareProfileSheet({
   const slug = slugify(athlete.nome) || "atleta";
   const shortLink = `empregol.co/p/${slug}`;
   const fullLink = `https://${shortLink}`;
-  const shareText = `Confira o perfil de ${athlete.nome} no Empregol`;
+  const shareText = `Confira o perfil de ${athlete.nome} na Empregol`;
 
   const capture = () =>
     captureRef(cardRef, { format: "png", quality: 1, result: "tmpfile" });
@@ -204,7 +205,11 @@ export function ShareProfileSheet({
           await shareToInstagramStory();
           break;
         case "whatsapp":
-          await shareToSocial(Social.Whatsapp);
+          // iOS descarta o texto ao enviar imagem direto pro WhatsApp (shareSingle).
+          // Pelo share sheet do sistema, o WhatsApp recebe imagem + link (itens
+          // separados). No Android o shareSingle já leva imagem + legenda.
+          if (Platform.OS === "ios") await shareViaSheet();
+          else await shareToSocial(Social.Whatsapp);
           break;
         case "x":
           await shareToSocial(Social.Twitter);

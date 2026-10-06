@@ -2,11 +2,12 @@ import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Tag, Text, Toast } from "@/components/ui";
 import { POSITIONS } from "@/constants/positions";
+import { supportWhatsappUrl } from "@/constants/support";
 import { useAuth } from "@/context/AuthContext";
 import {
   dashboardApi,
@@ -200,6 +201,18 @@ export function MeusDadosScreen() {
   );
   const vitrineDays = dashboard?.stats.daysOnPlatform ?? daysActive;
 
+  const openSupport = async () => {
+    const url = supportWhatsappUrl();
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        "Não foi possível abrir o WhatsApp",
+        "Verifique se o WhatsApp está instalado neste aparelho.",
+      );
+    }
+  };
+
   const jersey =
     athlete.numero != null ? String(athlete.numero).padStart(2, "0") : "—";
   const isLivre = athlete.disponibilidade === "livre";
@@ -381,6 +394,12 @@ export function MeusDadosScreen() {
             title="Trocar senha"
             subtitle={`Última troca há ${daysActive}d`}
             complete
+          />
+          <AccountRow
+            title="Ajuda e Suporte"
+            subtitle="Fale com a Empregol no WhatsApp"
+            complete
+            onPress={openSupport}
           />
         </View>
       </ScrollView>
