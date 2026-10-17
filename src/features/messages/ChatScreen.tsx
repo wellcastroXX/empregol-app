@@ -23,6 +23,7 @@ import { io, type Socket } from "socket.io-client";
 import { Avatar, Text } from "@/components/ui";
 import { env } from "@/config/env";
 import { useAuth } from "@/context/AuthContext";
+import { showModerationMenu } from "@/features/moderation/moderationActions";
 import {
   conversationsApi,
   type ApiMessage,
@@ -70,7 +71,13 @@ export function ChatScreen() {
     id: conversationId,
     name: participantName,
     subtitle,
-  } = useLocalSearchParams<{ id: string; name?: string; subtitle?: string }>();
+    peerUserId,
+  } = useLocalSearchParams<{
+    id: string;
+    name?: string;
+    subtitle?: string;
+    peerUserId?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, session } = useAuth();
@@ -109,7 +116,7 @@ export function ChatScreen() {
     [user?.id],
   );
 
-  // Tema por papel: agente/clube vê o chat dark; atleta vê claro.
+  // Tema por papel: Agência/clube vê o chat dark; atleta vê claro.
   const dark = user?.role === "contractor";
   const t = dark
     ? {
@@ -390,8 +397,21 @@ export function ChatScreen() {
             </Text>
           )}
         </View>
-        {/* OCULTADO, ATE DEFINICOES DE FEATURES */}
-        {/* <Feather name="more-horizontal" size={20} color={t.fg} /> */}
+        <Pressable
+          hitSlop={10}
+          onPress={() =>
+            showModerationMenu({
+              targetUserId: peerUserId || undefined,
+              targetName: participantName,
+              context: "chat",
+              onBlocked: () => router.back(),
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel="Mais opções"
+        >
+          <Feather name="more-horizontal" size={20} color={t.fg} />
+        </Pressable>
       </View>
 
       <KeyboardAvoidingView

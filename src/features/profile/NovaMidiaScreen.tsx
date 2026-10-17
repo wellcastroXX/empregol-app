@@ -316,7 +316,10 @@ export function NovaMidiaScreen() {
         quality: 0.8,
       });
       if (!result.canceled && result.assets[0]) {
-        await acceptPicked(result.assets[0], tab === "video" ? "video" : "foto");
+        await acceptPicked(
+          result.assets[0],
+          tab === "video" ? "video" : "foto",
+        );
       }
     } catch (err) {
       Alert.alert(
@@ -342,7 +345,10 @@ export function NovaMidiaScreen() {
         videoMaxDuration: 120,
       });
       if (!result.canceled && result.assets[0]) {
-        await acceptPicked(result.assets[0], tab === "video" ? "video" : "foto");
+        await acceptPicked(
+          result.assets[0],
+          tab === "video" ? "video" : "foto",
+        );
       }
     } catch (err) {
       Alert.alert(
@@ -638,7 +644,7 @@ export function NovaMidiaScreen() {
               Visível na vitrine
             </Text>
             <Text variant="xs" color={colors.fgMuted}>
-              Todo clube/agente verificado vê.
+              Todo clube/agência verificado vê.
             </Text>
           </View>
           <Toggle value={visivel} onChange={setVisivel} />
@@ -660,7 +666,11 @@ export function NovaMidiaScreen() {
       {preparing && (
         <View style={styles.compressOverlay} pointerEvents="auto">
           <ActivityIndicator color={palette.giz} size="large" />
-          <Text variant="bodyMedium" color={palette.giz} style={styles.compressText}>
+          <Text
+            variant="bodyMedium"
+            color={palette.giz}
+            style={styles.compressText}
+          >
             Comprimindo vídeo… {progress}%
           </Text>
         </View>

@@ -26,6 +26,7 @@ import {
 import { POSITIONS } from "@/constants/positions";
 import { useAuth } from "@/context/AuthContext";
 import { useGlobalLoading } from "@/context/GlobalLoadingContext";
+import { showModerationMenu } from "@/features/moderation/moderationActions";
 import { AvatarSheet } from "@/features/profile/AvatarSheet";
 import { profileService } from "@/services";
 import { conversationsApi } from "@/services/api/conversations-api";
@@ -40,7 +41,7 @@ import {
   OwnAthleteHeader,
   PersonalDataSection,
   ScoutAthleteHeader,
-  // ScoutPersonalDataCard, // oculto no ambiente Agente/Clube (a pedido)
+  // ScoutPersonalDataCard, // oculto no ambiente Agência/Clube (a pedido)
   TrajetoriaSection,
   VideoThumbs,
 } from "../components";
@@ -48,11 +49,16 @@ import { ShareProfileSheet } from "../components/ShareProfileSheet";
 
 /** URL amigável p/ exibição: sem protocolo nem barra final. */
 const prettyUrl = (raw: string) =>
-  raw.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  raw
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/+$/, "");
 
 /** Abre o link externo no navegador (adiciona https:// se faltar). */
 async function openExternal(raw: string) {
-  const url = /^https?:\/\//i.test(raw.trim()) ? raw.trim() : `https://${raw.trim()}`;
+  const url = /^https?:\/\//i.test(raw.trim())
+    ? raw.trim()
+    : `https://${raw.trim()}`;
   try {
     await Linking.openURL(url);
   } catch {
@@ -344,7 +350,21 @@ export function AthleteProfileScreen({
             inactiveColor={palette.giz}
             onPress={toggleFavorite}
           />
-          <Feather name="more-horizontal" size={20} color={palette.giz} />
+          <Pressable
+            hitSlop={8}
+            onPress={() =>
+              showModerationMenu({
+                targetUserId: athlete.contaUserId,
+                targetName: athlete.nome,
+                context: "profile",
+                onBlocked: () => router.back(),
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Mais opções"
+          >
+            <Feather name="more-horizontal" size={20} color={palette.giz} />
+          </Pressable>
         </View>
       </View>
 
@@ -359,7 +379,7 @@ export function AthleteProfileScreen({
         <View style={styles.body}>
           <AthleteAboutSection athlete={athlete} />
           <AthleteStats athlete={athlete} showClub={false} dark />
-          {/* Dados pessoais ocultos no ambiente Agente/Clube (comentado a pedido). */}
+          {/* Dados pessoais ocultos no ambiente Agência/Clube (comentado a pedido). */}
           {/* <ScoutPersonalDataCard athlete={athlete} /> */}
           <TrajetoriaSection entries={athlete.trajetoria} dark />
           {!!athlete.perfilEsportivoUrl?.trim() && (
@@ -376,7 +396,11 @@ export function AthleteProfileScreen({
                   pressed && styles.linkPressed,
                 ]}
               >
-                <Feather name="external-link" size={18} color={palette.gramado} />
+                <Feather
+                  name="external-link"
+                  size={18}
+                  color={palette.gramado}
+                />
                 <Text
                   variant="smMedium"
                   color={palette.giz}

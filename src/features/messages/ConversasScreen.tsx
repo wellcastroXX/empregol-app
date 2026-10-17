@@ -86,15 +86,21 @@ export function ConversasScreen() {
 
   function openChat(c: ApiConversation) {
     const name = isAthlete ? c.contractor?.name : c.athlete?.fullName;
+    const peerUserId = isAthlete ? c.contractor?.userId : c.athlete?.userId;
     const subtitle = isAthlete
       ? c.contractor?.type === "AGENT"
-        ? "AGENTE"
+        ? "AGÊNCIA"
         : "CLUBE"
       : (c.athlete?.position ?? "").toUpperCase();
     conversationsApi.markRead(c.id).catch(() => {});
     router.push({
       pathname: "/conversas/[id]",
-      params: { id: c.id, name: name ?? "", subtitle },
+      params: {
+        id: c.id,
+        name: name ?? "",
+        subtitle,
+        peerUserId: peerUserId ?? "",
+      },
     });
   }
 
@@ -136,7 +142,7 @@ export function ConversasScreen() {
             title="Nenhuma conversa ainda.."
             message={
               isAthlete
-                ? "Quando um clube ou agente puxar papo, a conversa aparece aqui."
+                ? "Quando um clube ou agência puxar papo, a conversa aparece aqui."
                 : "Abra a vitrine e convide um atleta para conversar."
             }
           />
@@ -207,7 +213,7 @@ export function ConversasScreen() {
                       {isAgent && (
                         <View style={[styles.roleTag, { borderColor: t.rule }]}>
                           <Text style={styles.roleTagText} color={t.muted}>
-                            AGENTE
+                            AGÊNCIA
                           </Text>
                         </View>
                       )}

@@ -73,6 +73,9 @@ export interface AthleteMediaItem {
 export interface AthleteProfile extends BaseUser {
   role: "athlete";
 
+  /** ID da conta (User) do atleta — usado para moderação (denúncia/bloqueio). */
+  contaUserId?: string;
+
   // Obrigatórios
   cpf: string;
   dataNascimento: string; // ISO date

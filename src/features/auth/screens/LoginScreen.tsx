@@ -5,7 +5,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Banner, Button, Logo, Text, TextField } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
-import { SocialAuthButtons } from "@/features/auth/components/SocialAuthButtons";
 import { AuthError } from "@/services";
 import { colors, palette, spacing } from "@/theme";
 import { isValidEmail } from "@/utils";
@@ -109,8 +108,6 @@ export function LoginScreen() {
             loading={loading}
             onPress={handleSubmit}
           />
-
-          <SocialAuthButtons onApple={() => {}} onGoogle={() => {}} />
         </View>
 
         {/* Footer */}

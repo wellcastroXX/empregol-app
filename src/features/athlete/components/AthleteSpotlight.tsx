@@ -17,7 +17,7 @@ export type SpotlightAthlete = {
 const ROTATE_MS = 10000;
 
 /**
- * "Destaques da semana" (view do agente) — carrossel vertical automático dos
+ * "Destaques da semana" (view da agência) — carrossel vertical automático dos
  * atletas recém-chegados. Card verde com borda; dots FORA do card, à direita.
  * Mostra a foto do atleta ou as iniciais.
  */

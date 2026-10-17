@@ -7,7 +7,7 @@ import type { ContractorProfile } from '@/types';
 /** Institutional area — document, razão social, social, extra info. */
 export function InstitutionalSection({ contractor }: { contractor: ContractorProfile }) {
   const rows: { label: string; value?: string }[] = [
-    { label: contractor.tipo === 'club' ? 'CNPJ' : 'CPF', value: contractor.cnpj ?? contractor.cpf },
+    { label: contractor.cnpj ? 'CNPJ' : 'CPF', value: contractor.cnpj ?? contractor.cpf },
     { label: 'Razão social', value: contractor.razaoSocial },
     { label: 'Rede social', value: contractor.redeSocial },
     { label: 'Informações adicionais', value: contractor.informacoesAdicionais },

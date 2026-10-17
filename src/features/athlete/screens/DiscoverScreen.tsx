@@ -260,7 +260,7 @@ export function DiscoverScreen() {
     }
   };
 
-  // Atleta: a aba "explorar" é o Mercado (clubes/agentes), não a vitrine de atletas.
+  // Atleta: a aba "explorar" é o Mercado (clubes/agências), não a vitrine de atletas.
   if (!isContractor) {
     return <MercadoScreen />;
   }

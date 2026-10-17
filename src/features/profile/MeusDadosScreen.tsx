@@ -9,6 +9,7 @@ import { Tag, Text, Toast } from "@/components/ui";
 import { POSITIONS } from "@/constants/positions";
 import { supportWhatsappUrl } from "@/constants/support";
 import { useAuth } from "@/context/AuthContext";
+import { accountApi } from "@/services/api/account-api";
 import {
   dashboardApi,
   type AthleteDashboard,
@@ -92,11 +93,14 @@ function AccountRow({
   title,
   subtitle,
   complete,
+  danger,
   onPress,
 }: {
   title: string;
   subtitle: string;
   complete?: boolean;
+  /** Ação destrutiva — ícone X sobre fundo vermelho. */
+  danger?: boolean;
   onPress?: () => void;
 }) {
   return (
@@ -105,12 +109,20 @@ function AccountRow({
       accessibilityRole="button"
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
-      <View style={[styles.checkBox, complete && styles.checkBoxDone]}>
+      <View
+        style={[
+          styles.checkBox,
+          complete && styles.checkBoxDone,
+          danger && styles.checkBoxDanger,
+        ]}
+      >
         <Feather
-          name="check"
+          name={danger ? "x" : "check"}
           size={18}
-          color={complete ? colors.accentFg : colors.fgMuted}
-          style={complete ? undefined : styles.checkIncomplete}
+          color={
+            danger || complete ? colors.accentFg : colors.fgMuted
+          }
+          style={danger || complete ? undefined : styles.checkIncomplete}
         />
       </View>
       <View style={styles.rowBody}>
@@ -159,7 +171,7 @@ function StatCell({
 /** "Meus dados" — editorial edit hub for the athlete's vitrine + account. */
 export function MeusDadosScreen() {
   const router = useRouter();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, signOut } = useAuth();
   const [dashboard, setDashboard] = useState<AthleteDashboard | null>(null);
   const [editing, setEditing] = useState<EditSection | null>(null);
   const [mediaCount, setMediaCount] = useState<number | null>(null);
@@ -211,6 +223,46 @@ export function MeusDadosScreen() {
         "Verifique se o WhatsApp está instalado neste aparelho.",
       );
     }
+  };
+
+  const doDeleteAccount = async () => {
+    try {
+      await accountApi.deleteAccount();
+      await signOut();
+    } catch {
+      Alert.alert(
+        "Não foi possível excluir",
+        "Tente novamente em instantes ou fale com o suporte.",
+      );
+    }
+  };
+
+  const confirmDeleteAccount = () => {
+    // Dupla confirmação — ação destrutiva e permanente.
+    Alert.alert(
+      "Excluir conta",
+      "Isso apaga permanentemente sua conta, perfil, mídias e conversas. Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Continuar",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Tem certeza?",
+              "Sua conta e todos os seus dados serão excluídos para sempre.",
+              [
+                { text: "Cancelar", style: "cancel" },
+                {
+                  text: "Excluir definitivamente",
+                  style: "destructive",
+                  onPress: doDeleteAccount,
+                },
+              ],
+            ),
+        },
+      ],
+    );
   };
 
   const jersey =
@@ -401,6 +453,12 @@ export function MeusDadosScreen() {
             complete
             onPress={openSupport}
           />
+          <AccountRow
+            title="Excluir conta"
+            subtitle="Apaga permanentemente sua conta e seus dados"
+            danger
+            onPress={confirmDeleteAccount}
+          />
         </View>
       </ScrollView>
 
@@ -546,6 +604,9 @@ const styles = StyleSheet.create({
   },
   checkBoxDone: {
     backgroundColor: colors.accent,
+  },
+  checkBoxDanger: {
+    backgroundColor: colors.statusEmpregado,
   },
   checkIncomplete: {
     opacity: 0.4,

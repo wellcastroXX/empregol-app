@@ -22,18 +22,18 @@ import { timeAgoShort } from "@/utils";
 
 const TYPE_LABEL: Record<ContractorType, string> = {
   CLUB: "CLUBE",
-  AGENT: "AGENTE",
+  AGENT: "AGÊNCIA",
 };
 
 const TABS: { key: "all" | ContractorType; label: string }[] = [
   { key: "all", label: "TODOS" },
   { key: "CLUB", label: "CLUBES" },
-  { key: "AGENT", label: "AGENTES" },
+  { key: "AGENT", label: "AGÊNCIAS" },
 ];
 
 /**
  * "Mercado" — explorar do atleta. Não é feed social: é o diretório profissional
- * de clubes e agentes na plataforma (o lado da demanda) — quem está aqui e quem
+ * de clubes e Agências na plataforma (o lado da demanda) — quem está aqui e quem
  * acabou de entrar. Dá ao atleta noção de exposição e oportunidade.
  */
 export function MercadoScreen() {
@@ -91,7 +91,7 @@ export function MercadoScreen() {
             </Text>
           </Text>
           <Text variant="sm" color={colors.fgMuted}>
-            Clubes e agentes ativos na plataforma — o público que pode te
+            Clubes e Agências ativos na plataforma — o público que pode te
             encontrar.
           </Text>
         </View>
@@ -103,7 +103,7 @@ export function MercadoScreen() {
             style={styles.searchInput}
             value={q}
             onChangeText={setQ}
-            placeholder="Buscar clube ou agente..."
+            placeholder="Buscar clube ou agência..."
             placeholderTextColor={colors.fgMuted}
             autoCapitalize="none"
           />
@@ -139,7 +139,7 @@ export function MercadoScreen() {
           </Text>
           <Text variant="monoLabel" color={colors.fgMuted}>
             {tab === "AGENT"
-              ? "AGENTES"
+              ? "AGÊNCIAS"
               : tab === "CLUB"
                 ? "CLUBES"
                 : "NA PLATAFORMA"}
@@ -163,7 +163,7 @@ export function MercadoScreen() {
             message={
               q
                 ? "Nenhum resultado para a busca."
-                : "Ainda não há clubes/agentes nesta categoria."
+                : "Ainda não há clubes/agências nesta categoria."
             }
           />
         ) : (

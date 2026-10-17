@@ -85,7 +85,7 @@ export const BENEFITS: Benefit[] = [
     subtitle: "Seus contratos e direitos protegidos.",
     image: require("../../../assets/images/benefits/advocacia_profile.jpeg"),
     description:
-      "No futebol, cada transferência, renovação ou contratação depende de um contrato bem feito. O jurídico protege a carreira do atleta, garantindo salário, direitos de imagem e condições justas, e assegura a clubes e agentes o retorno sobre seu investimento.\n\n" +
+      "No futebol, cada transferência, renovação ou contratação depende de um contrato bem feito. O jurídico protege a carreira do atleta, garantindo salário, direitos de imagem e condições justas, e assegura a clubes e agências o retorno sobre seu investimento.\n\n" +
       "Com regras da CBF e da FIFA em constante mudança, um prazo perdido ou uma cláusula mal escrita pode custar caro. Para atletas sem contrato, a orientação jurídica é ainda mais essencial para evitar promessas vazias e negociar com segurança.\n\n" +
       "Talento abre portas, mas é o jurídico que garante que elas continuem abertas.",
   },

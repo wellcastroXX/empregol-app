@@ -6,8 +6,8 @@ export interface ApiConversation {
   lastMessagePreview?: string | null;
   athleteUnreadCount: number;
   contractorUnreadCount: number;
-  contractor?: { id: string; name: string; type: 'AGENT' | 'CLUB'; companyName?: string | null; avatarUrl?: string | null };
-  athlete?: { id: string; fullName: string; position: string; avatarUrl?: string | null; jerseyNumber?: number | null };
+  contractor?: { id: string; userId?: string; name: string; type: 'AGENT' | 'CLUB'; companyName?: string | null; avatarUrl?: string | null };
+  athlete?: { id: string; userId?: string; fullName: string; position: string; avatarUrl?: string | null; jerseyNumber?: number | null };
 }
 
 export interface ApiMessage {

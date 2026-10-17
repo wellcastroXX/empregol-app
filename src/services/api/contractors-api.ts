@@ -1,8 +1,8 @@
-import { apiRequest } from './client';
+import { apiRequest } from "./client";
 
-export type ContractorType = 'CLUB' | 'AGENT';
+export type ContractorType = "CLUB" | "AGENT";
 
-/** Clube/agente listado no "Mercado". */
+/** Clube/Agência listado no "Mercado". */
 export interface MarketContractor {
   id: string;
   name: string;
@@ -28,13 +28,15 @@ export interface ExploreContractorsParams {
 }
 
 export const contractorsApi = {
-  /** Mercado — clubes/agentes da plataforma (GET /explore/contractors). */
-  async explore(params: ExploreContractorsParams = {}): Promise<ContractorsResult> {
+  /** Mercado — clubes/Agências da plataforma (GET /explore/contractors). */
+  async explore(
+    params: ExploreContractorsParams = {},
+  ): Promise<ContractorsResult> {
     const qs = new URLSearchParams();
-    if (params.q?.trim()) qs.set('q', params.q.trim());
-    if (params.type) qs.set('type', params.type);
-    qs.set('page', String(params.page ?? 1));
-    qs.set('limit', String(params.limit ?? 40));
+    if (params.q?.trim()) qs.set("q", params.q.trim());
+    if (params.type) qs.set("type", params.type);
+    qs.set("page", String(params.page ?? 1));
+    qs.set("limit", String(params.limit ?? 40));
     const res = await apiRequest<{ status: string; data: ContractorsResult }>(
       `/explore/contractors?${qs.toString()}`,
     );

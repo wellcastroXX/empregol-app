@@ -1,22 +1,45 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Avatar, Button, ClubSpotlight, Logo, Tag, Text } from '@/components/ui';
-import { useAuth } from '@/context/AuthContext';
-import { dashboardApi, type AthleteDashboard } from '@/services/api/dashboard-api';
-import { colors, fontFamily, palette, radii, spacing } from '@/theme';
-import type { AthleteProfile, ContractorProfile } from '@/types';
-import { timeAgoShort } from '@/utils';
-import { ContractorHome } from './ContractorHome';
+import {
+  Avatar,
+  Button,
+  ClubSpotlight,
+  Logo,
+  Tag,
+  Text,
+} from "@/components/ui";
+import { useAuth } from "@/context/AuthContext";
+import {
+  dashboardApi,
+  type AthleteDashboard,
+} from "@/services/api/dashboard-api";
+import { colors, fontFamily, palette, radii, spacing } from "@/theme";
+import type { AthleteProfile, ContractorProfile } from "@/types";
+import { timeAgoShort } from "@/utils";
+import { ContractorHome } from "./ContractorHome";
 
-const CONTRACTOR_LABEL: Record<'AGENT' | 'CLUB', string> = { AGENT: 'AGENTE', CLUB: 'CLUBE' };
+const CONTRACTOR_LABEL: Record<"AGENT" | "CLUB", string> = {
+  AGENT: "AGÊNCIA",
+  CLUB: "CLUBE",
+};
 
 function dateEyebrow(): string {
   const now = new Date();
-  const wd = now.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-  const mon = now.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+  const wd = now
+    .toLocaleDateString("pt-BR", { weekday: "short" })
+    .replace(".", "");
+  const mon = now
+    .toLocaleDateString("pt-BR", { month: "short" })
+    .replace(".", "");
   return `${wd} · ${now.getDate()} · ${mon}`.toUpperCase();
 }
 
@@ -26,15 +49,16 @@ export function HomeScreen() {
   if (!user) return null;
 
   // Contractor — full dark home (own screen shell).
-  if (user.role === 'contractor') {
+  if (user.role === "contractor") {
     return <ContractorHome contractor={user as ContractorProfile} />;
   }
 
   const athlete = user as AthleteProfile;
-  const jersey = athlete.numero != null ? String(athlete.numero).padStart(2, '0') : null;
+  const jersey =
+    athlete.numero != null ? String(athlete.numero).padStart(2, "0") : null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.topBar}>
         <Logo size={22} />
         <View style={styles.topRight}>
@@ -51,8 +75,11 @@ export function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AthleteHome athlete={athlete} onEdit={() => router.push('/profile')} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <AthleteHome athlete={athlete} onEdit={() => router.push("/profile")} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -60,7 +87,13 @@ export function HomeScreen() {
 
 /* ───────────────────────── Athlete view (real dashboard) ───────────────────── */
 
-function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () => void }) {
+function AthleteHome({
+  athlete,
+  onEdit,
+}: {
+  athlete: AthleteProfile;
+  onEdit: () => void;
+}) {
   const [data, setData] = useState<AthleteDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -94,7 +127,7 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
         </Text>
         <Text style={styles.greet}>
           <Text style={styles.greet} color={colors.accent}>
-            Olá{' '}
+            Olá{" "}
           </Text>
           <Text style={styles.greet} color={colors.fg}>
             {athlete.nome}
@@ -109,9 +142,19 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
         <>
           {/* Stats */}
           <View style={styles.stats}>
-            <StatCell value={String(data?.stats.viewsToday ?? 0)} label="viram hoje" up={!!data?.stats.viewsToday} />
-            <StatCell value={String(data?.stats.pendingProposals ?? 0)} label="propostas" />
-            <StatCell value={`${data?.stats.daysOnPlatform ?? 0}d`} label="na vitrine" />
+            <StatCell
+              value={String(data?.stats.viewsToday ?? 0)}
+              label="viram hoje"
+              up={!!data?.stats.viewsToday}
+            />
+            <StatCell
+              value={String(data?.stats.pendingProposals ?? 0)}
+              label="propostas"
+            />
+            <StatCell
+              value={`${data?.stats.daysOnPlatform ?? 0}d`}
+              label="na vitrine"
+            />
           </View>
 
           {/* Destaques da semana — slider de clubes recém-chegados */}
@@ -125,10 +168,20 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
               </Text>
               <View style={styles.inviteCard}>
                 <View style={styles.inviteTop}>
-                  <Avatar name={convite.contractor.name} uri={convite.contractor.avatarUrl ?? undefined} tone="bone" size={40} />
+                  <Avatar
+                    name={convite.contractor.name}
+                    uri={convite.contractor.avatarUrl ?? undefined}
+                    tone="bone"
+                    size={40}
+                  />
                   <View style={styles.inviteInfo}>
-                    <Text variant="bodyMedium" color={palette.giz} numberOfLines={1}>
-                      {convite.contractor.companyName ?? convite.contractor.name}
+                    <Text
+                      variant="bodyMedium"
+                      color={palette.giz}
+                      numberOfLines={1}
+                    >
+                      {convite.contractor.companyName ??
+                        convite.contractor.name}
                     </Text>
                     <Text variant="monoLabel" color={palette.cinzaOnDark}>
                       {CONTRACTOR_LABEL[convite.contractor.type]}
@@ -141,9 +194,18 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
                 </Text>
                 <View style={styles.inviteActions}>
                   <View style={styles.inviteCta}>
-                    <Button label="CONVERSAR" chevron fullWidth onPress={() => {}} />
+                    <Button
+                      label="CONVERSAR"
+                      chevron
+                      fullWidth
+                      onPress={() => {}}
+                    />
                   </View>
-                  <Pressable style={styles.remarcar} accessibilityRole="button" onPress={() => {}}>
+                  <Pressable
+                    style={styles.remarcar}
+                    accessibilityRole="button"
+                    onPress={() => {}}
+                  >
                     <Text variant="smMedium" color={palette.giz}>
                       REMARCAR
                     </Text>
@@ -166,9 +228,18 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
               <View>
                 {viewers.map((v) => (
                   <View key={v.id} style={styles.scoutRow}>
-                    <Avatar name={v.contractor.name} uri={v.contractor.avatarUrl ?? undefined} tone="bone" size={36} />
+                    <Avatar
+                      name={v.contractor.name}
+                      uri={v.contractor.avatarUrl ?? undefined}
+                      tone="bone"
+                      size={36}
+                    />
                     <View style={styles.scoutInfo}>
-                      <Text variant="smMedium" color={colors.fg} numberOfLines={1}>
+                      <Text
+                        variant="smMedium"
+                        color={colors.fg}
+                        numberOfLines={1}
+                      >
                         {v.contractor.name}
                       </Text>
                       <Text variant="monoLabel" color={colors.fgMuted}>
@@ -190,13 +261,19 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
       <View style={styles.suggest}>
         <View style={styles.suggestText}>
           <Text variant="h3" color={colors.fg}>
-            Sobe um vídeo{'\n'}novo essa semana.
+            Sobe um vídeo{"\n"}novo essa semana.
           </Text>
           <Text variant="xs" color={colors.fgMuted}>
             Perfis com vídeo recebem 3× mais propostas.
           </Text>
         </View>
-        <Button label="SUBIR" chevron variant="ink" size="sm" onPress={onEdit} />
+        <Button
+          label="SUBIR"
+          chevron
+          variant="ink"
+          size="sm"
+          onPress={onEdit}
+        />
       </View>
     </>
   );
@@ -204,7 +281,15 @@ function AthleteHome({ athlete, onEdit }: { athlete: AthleteProfile; onEdit: () 
 
 /* ───────────────────────── Atoms ───────────────────────── */
 
-function StatCell({ value, label, up }: { value: string; label: string; up?: boolean }) {
+function StatCell({
+  value,
+  label,
+  up,
+}: {
+  value: string;
+  label: string;
+  up?: boolean;
+}) {
   return (
     <View style={styles.statCell}>
       <View style={styles.statValueRow}>
@@ -227,55 +312,99 @@ function StatCell({ value, label, up }: { value: string; label: string; up?: boo
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  topRight: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   jerseyBadge: {
     minWidth: 30,
     height: 30,
     paddingHorizontal: 4,
     borderRadius: radii.xs,
     backgroundColor: palette.tinta,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  jerseyBadgeText: { fontFamily: fontFamily.monoMedium, fontSize: 13, fontVariant: ['tabular-nums'] },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing['4xl'], gap: spacing.xl },
+  jerseyBadgeText: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 13,
+    fontVariant: ["tabular-nums"],
+  },
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing["4xl"],
+    gap: spacing.xl,
+  },
   greetBlock: { gap: spacing.sm },
-  greet: { fontFamily: fontFamily.display, fontSize: 28, lineHeight: 32, letterSpacing: -0.4 },
-  rule: { height: 1.5, backgroundColor: colors.ruleStrong, marginTop: -spacing.sm },
-  loader: { marginVertical: spacing['2xl'] },
-  stats: { flexDirection: 'row' },
+  greet: {
+    fontFamily: fontFamily.display,
+    fontSize: 28,
+    lineHeight: 32,
+    letterSpacing: -0.4,
+  },
+  rule: {
+    height: 1.5,
+    backgroundColor: colors.ruleStrong,
+    marginTop: -spacing.sm,
+  },
+  loader: { marginVertical: spacing["2xl"] },
+  stats: { flexDirection: "row" },
   statCell: { flex: 1, gap: spacing.xs },
-  statValueRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  statValue: { fontFamily: fontFamily.monoMedium, fontSize: 28, lineHeight: 30, fontVariant: ['tabular-nums'] },
+  statValueRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  statValue: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 28,
+    lineHeight: 30,
+    fontVariant: ["tabular-nums"],
+  },
   statUp: { fontFamily: fontFamily.monoMedium, fontSize: 16 },
-  darkCard: { flexDirection: 'row', backgroundColor: palette.tinta, borderRadius: radii.md, padding: spacing.lg, gap: spacing.sm },
+  darkCard: {
+    flexDirection: "row",
+    backgroundColor: palette.tinta,
+    borderRadius: radii.md,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
   darkBody: { flex: 1, gap: spacing.md },
-  destaqueRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  destaqueName: { flex: 1, fontFamily: fontFamily.displayBold, fontSize: 22, lineHeight: 24, letterSpacing: -0.3 },
+  destaqueRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  destaqueName: {
+    flex: 1,
+    fontFamily: fontFamily.displayBold,
+    fontSize: 22,
+    lineHeight: 24,
+    letterSpacing: -0.3,
+  },
   section: { gap: spacing.md },
-  inviteCard: { backgroundColor: palette.tinta, borderRadius: radii.md, padding: spacing.lg, gap: spacing.lg },
-  inviteTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  inviteCard: {
+    backgroundColor: palette.tinta,
+    borderRadius: radii.md,
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  inviteTop: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   inviteInfo: { flex: 1, gap: 2 },
-  inviteHeadline: { fontFamily: fontFamily.display, fontSize: 22, lineHeight: 26, letterSpacing: -0.3 },
-  inviteActions: { flexDirection: 'row', gap: spacing.md },
+  inviteHeadline: {
+    fontFamily: fontFamily.display,
+    fontSize: 22,
+    lineHeight: 26,
+    letterSpacing: -0.3,
+  },
+  inviteActions: { flexDirection: "row", gap: spacing.md },
   inviteCta: { flex: 1 },
   remarcar: {
     paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1.5,
     borderColor: palette.giz,
     borderRadius: radii.sm,
   },
   scoutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
@@ -283,9 +412,9 @@ const styles = StyleSheet.create({
   },
   scoutInfo: { flex: 1, gap: 2 },
   suggest: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.md,
     backgroundColor: palette.osso,
     borderRadius: radii.md,

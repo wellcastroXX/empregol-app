@@ -197,6 +197,7 @@ interface ApiUser {
 }
 interface ApiAthlete {
   id: string;
+  userId?: string;
   fullName: string;
   cpf: string;
   birthDate: string;
@@ -448,6 +449,7 @@ export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
 
   return {
     id: a.id,
+    contaUserId: a.userId ?? undefined,
     role: "athlete",
     nome: a.fullName,
     email: "",

@@ -19,21 +19,19 @@ import { colors, spacing } from "@/theme";
 import type { ContractorKind } from "@/types";
 import {
   isValidCnpj,
-  isValidCpf,
   isValidEmail,
   isValidPassword,
   isValidPhone,
   maskCnpj,
-  maskCpf,
   maskPhone,
 } from "@/utils";
 
 const TIPO_CHIPS: ChipOption<ContractorKind>[] = [
   { value: "club", label: "CLUBE" },
-  { value: "agent", label: "AGENTE" },
+  { value: "agent", label: "AGÊNCIA" },
 ];
 
-/** Cadastro do contratante — Clube (CNPJ) ou Agente (CPF). */
+/** Cadastro do contratante — Clube (CNPJ) ou Agência (CPF). */
 export function ContractorRegisterScreen() {
   const router = useRouter();
   const { register } = useAuth();
@@ -59,13 +57,11 @@ export function ContractorRegisterScreen() {
     setError(null);
     if (nome.trim().length < 2)
       return setError(
-        isClub ? "Informe o nome do clube." : "Informe seu nome.",
+        isClub ? "Informe o nome do clube." : "Informe o nome da agência.",
       );
-    if (isClub) {
-      if (!isValidCnpj(documento)) return setError("CNPJ inválido.");
-    } else if (!isValidCpf(documento)) {
-      return setError("CPF inválido.");
-    }
+    if (!isValidCnpj(documento)) return setError("CNPJ inválido.");
+    if (!isClub && razaoSocial.trim().length < 2)
+      return setError("Informe a razão social da agência.");
     if (!isValidEmail(email)) return setError("E-mail inválido.");
     if (!isValidPhone(telefone)) return setError("Telefone inválido.");
     if (!isValidPassword(senha)) {
@@ -84,9 +80,8 @@ export function ContractorRegisterScreen() {
         telefone,
         senha,
         redeSocial: redeSocial.trim() || undefined,
-        ...(isClub
-          ? { cnpj: documento, razaoSocial: razaoSocial.trim() || undefined }
-          : { cpf: documento }),
+        cnpj: documento,
+        razaoSocial: razaoSocial.trim() || undefined,
       });
       router.replace("/verify-email");
     } catch (e) {
@@ -107,9 +102,9 @@ export function ContractorRegisterScreen() {
           step={2}
           total={2}
           eyebrow="C O N T R A T A N T E"
-          title={isClub ? "Dados do clube." : "Dados do agente."}
+          title={isClub ? "Dados do clube." : "Dados da agência."}
           accentTail="."
-          subtitle="Validamos CPF / CNPJ pra liberar mensagens com atletas."
+          subtitle="Validamos o CNPJ pra liberar mensagens com atletas."
         />
       </View>
 
@@ -132,44 +127,36 @@ export function ContractorRegisterScreen() {
         </View>
 
         <TextField
-          label={isClub ? "NOME DO CLUBE" : "NOME COMPLETO"}
+          label={isClub ? "NOME DO CLUBE" : "NOME DA AGÊNCIA"}
           required
           value={nome}
           onChangeText={setNome}
-          placeholder={isClub ? "Botafogo de Ribeirão Preto" : "Renato Pacheco"}
+          placeholder={
+            isClub ? "Botafogo de Ribeirão Preto" : "Base Sports Agência"
+          }
         />
 
-        {isClub ? (
-          <>
-            <TextField
-              label="CNPJ"
-              required
-              mono
-              hint="Validado online"
-              keyboardType="number-pad"
-              value={documento}
-              onChangeText={(v) => setDocumento(maskCnpj(v))}
-              placeholder="00.000.000/0000-00"
-            />
-            <TextField
-              label="RAZÃO SOCIAL"
-              value={razaoSocial}
-              onChangeText={setRazaoSocial}
-              placeholder="Botafogo Futebol e Regatas S/A"
-            />
-          </>
-        ) : (
-          <TextField
-            label="CPF"
-            required
-            mono
-            hint="Validado online"
-            keyboardType="number-pad"
-            value={documento}
-            onChangeText={(v) => setDocumento(maskCpf(v))}
-            placeholder="000.000.000-00"
-          />
-        )}
+        <TextField
+          label="CNPJ"
+          required
+          mono
+          hint="Validado online"
+          keyboardType="number-pad"
+          value={documento}
+          onChangeText={(v) => setDocumento(maskCnpj(v))}
+          placeholder="00.000.000/0000-00"
+        />
+        <TextField
+          label="RAZÃO SOCIAL"
+          required={!isClub}
+          value={razaoSocial}
+          onChangeText={setRazaoSocial}
+          placeholder={
+            isClub
+              ? "Botafogo Futebol e Regatas S/A"
+              : "Base Sports Agência LTDA"
+          }
+        />
 
         <TextField
           label="E-MAIL"
@@ -210,10 +197,7 @@ export function ContractorRegisterScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TermsAcceptance
-          accepted={acceptedTerms}
-          onToggle={setAcceptedTerms}
-        />
+        <TermsAcceptance accepted={acceptedTerms} onToggle={setAcceptedTerms} />
         <Button
           label="VERIFICAR E CONTINUAR"
           chevron

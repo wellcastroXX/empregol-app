@@ -79,7 +79,7 @@ export function ScoutPersonalDataCard({
       </View>
 
       <Text variant="xs" color={palette.cinzaOnDark} style={styles.note}>
-        Esses dados aparecem completos só pra clubes / agentes{" "}
+        Esses dados aparecem completos só pra clubes / agências{" "}
         <Text variant="xs" color={palette.giz}>
           verificados
         </Text>{" "}

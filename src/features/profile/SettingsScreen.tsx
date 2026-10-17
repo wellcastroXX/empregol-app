@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Linking, StyleSheet, View } from "react-native";
 
 import {
     Avatar,
@@ -11,7 +11,9 @@ import {
     Text,
     Toast,
 } from "@/components/ui";
+import { supportWhatsappUrl } from "@/constants/support";
 import { useAuth } from "@/context/AuthContext";
+import { accountApi } from "@/services/api/account-api";
 import { colors, spacing } from "@/theme";
 import { useState } from "react";
 
@@ -28,6 +30,54 @@ export function SettingsScreen() {
       { text: "Cancelar", style: "cancel" },
       { text: "Sair", style: "destructive", onPress: () => signOut() },
     ]);
+  };
+
+  const openSupport = async () => {
+    try {
+      await Linking.openURL(supportWhatsappUrl());
+    } catch {
+      setToastMessage("Não foi possível abrir o WhatsApp");
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      await accountApi.deleteAccount();
+      await signOut();
+    } catch {
+      Alert.alert(
+        "Não foi possível excluir",
+        "Tente novamente em instantes ou fale com o suporte.",
+      );
+    }
+  };
+
+  const confirmDeleteAccount = () => {
+    // Dupla confirmação — ação destrutiva e permanente.
+    Alert.alert(
+      "Excluir conta",
+      "Isso apaga permanentemente sua conta, perfil, mídias e conversas. Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Continuar",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Tem certeza?",
+              "Sua conta e todos os seus dados serão excluídos para sempre.",
+              [
+                { text: "Cancelar", style: "cancel" },
+                {
+                  text: "Excluir definitivamente",
+                  style: "destructive",
+                  onPress: deleteAccount,
+                },
+              ],
+            ),
+        },
+      ],
+    );
   };
 
   const showUnavailable = () => setToastMessage("Tente novamente mais tarde");
@@ -79,7 +129,14 @@ export function SettingsScreen() {
             icon="help-circle"
             title="Ajuda e suporte"
             chevron
-            onPress={showUnavailable}
+            onPress={openSupport}
+          />
+          <Divider />
+          <DataRow
+            icon="trash-2"
+            title="Excluir conta"
+            chevron
+            onPress={confirmDeleteAccount}
           />
         </View>
 

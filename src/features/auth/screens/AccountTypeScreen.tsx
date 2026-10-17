@@ -5,13 +5,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button, Text } from "@/components/ui";
 import { RegisterHeader } from "@/features/auth/components/RegisterHeader";
-import { SocialAuthButtons } from "@/features/auth/components/SocialAuthButtons";
 import { colors, fontFamily, palette, radii, spacing } from "@/theme";
 import type { ContractorKind } from "@/types";
 
 type Role = "atleta" | "contratante";
 
-/** Step 1 — "Você é quem?" Atleta or Contratante (→ Clube / Agente). */
+/** Step 1 — "Você é quem?" Atleta or Contratante (→ Clube / Agência). */
 export function AccountTypeScreen() {
   const router = useRouter();
   const [role, setRole] = useState<Role | null>(null);
@@ -77,7 +76,7 @@ export function AccountTypeScreen() {
               />
               <RoleCard
                 token="R."
-                name="Agente"
+                name="Agência"
                 hint="Procurador / empresário."
                 active={sub === "agent"}
                 onPress={() => setSub("agent")}
@@ -85,13 +84,6 @@ export function AccountTypeScreen() {
             </View>
           </View>
         )}
-
-        {/* Cadastro por redes sociais — habilita após escolher o perfil */}
-        <SocialAuthButtons
-          disabled={!role}
-          onApple={() => {}}
-          onGoogle={() => {}}
-        />
       </ScrollView>
 
       <View style={styles.footer}>
