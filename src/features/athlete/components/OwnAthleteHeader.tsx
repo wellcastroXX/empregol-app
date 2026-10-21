@@ -100,6 +100,7 @@ export type OwnAthleteHeaderProps = {
   onUpdatePhoto?: () => void;
   onUpdateData?: () => void;
   onShare?: () => void;
+  onSettings?: () => void;
 };
 
 /** Dark editorial header for the athlete's OWN profile — matches the reference. */
@@ -109,6 +110,7 @@ export function OwnAthleteHeader({
   onUpdatePhoto,
   onUpdateData,
   onShare,
+  onSettings,
 }: OwnAthleteHeaderProps) {
   const isVerified = athlete.verificacao === "verified";
   const daysActive = Math.max(
@@ -134,14 +136,26 @@ export function OwnAthleteHeader({
         <Text variant="eyebrow" color={palette.giz}>
           P E R F I L
         </Text>
-        <Pressable
-          hitSlop={10}
-          onPress={onShare}
-          accessibilityRole="button"
-          accessibilityLabel="Compartilhar"
-        >
-          <Feather name="share-2" size={18} color={palette.giz} />
-        </Pressable>
+        <View style={styles.topActions}>
+          <Pressable
+            hitSlop={10}
+            onPress={onShare}
+            accessibilityRole="button"
+            accessibilityLabel="Compartilhar"
+          >
+            <Feather name="share-2" size={18} color={palette.giz} />
+          </Pressable>
+          {onSettings && (
+            <Pressable
+              hitSlop={10}
+              onPress={onSettings}
+              accessibilityRole="button"
+              accessibilityLabel="Configurações"
+            >
+              <Feather name="settings" size={18} color={palette.giz} />
+            </Pressable>
+          )}
+        </View>
       </View>
       <View style={styles.rule} />
 
@@ -242,6 +256,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: spacing.xs,
+  },
+  topActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
   },
   rule: {
     height: 1,

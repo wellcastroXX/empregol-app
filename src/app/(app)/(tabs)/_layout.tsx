@@ -78,8 +78,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {/* Reachable from the profile (gear), not shown in the bar. */}
-      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

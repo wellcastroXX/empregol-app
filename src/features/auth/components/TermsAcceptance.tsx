@@ -34,7 +34,7 @@ async function openLocalTerms() {
 }
 
 /** Abre os Termos de Uso: visualizador in-app (remoto) ou fallback local. */
-async function openTerms() {
+export async function openTerms() {
   try {
     const res = await fetch(TERMS_URL, { method: "HEAD" });
     if (res.ok) {

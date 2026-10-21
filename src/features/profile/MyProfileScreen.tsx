@@ -12,7 +12,7 @@ export function MyProfileScreen() {
 
   if (!user) return <Screen />;
 
-  const openSettings = () => router.push('/settings');
+  const openSettings = () => router.push('/configuracoes');
 
   return user.role === 'athlete' ? (
     <AthleteProfileScreen athlete={user} showPersonalData onSettings={openSettings} />

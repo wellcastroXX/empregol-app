@@ -270,6 +270,7 @@ export function AthleteProfileScreen({
             onUpdatePhoto={() => setAvatarSheet(true)}
             onUpdateData={() => router.push("/meus-dados")}
             onShare={() => setShareSheet(true)}
+            onSettings={onSettings}
           />
 
           <View style={styles.ownBody}>

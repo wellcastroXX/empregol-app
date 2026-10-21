@@ -140,12 +140,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    justifyContent: "space-between",
     padding: spacing["2xl"],
     gap: spacing["2xl"],
   },
   top: {
-    gap: spacing["3xl"],
+    gap: spacing.xl,
   },
   headline: {
     gap: spacing.md,
@@ -163,6 +162,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: "auto",
   },
   footerLink: {
     borderBottomWidth: 1.5,

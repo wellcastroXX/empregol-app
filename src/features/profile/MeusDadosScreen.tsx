@@ -2,14 +2,12 @@ import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Tag, Text, Toast } from "@/components/ui";
 import { POSITIONS } from "@/constants/positions";
-import { supportWhatsappUrl } from "@/constants/support";
 import { useAuth } from "@/context/AuthContext";
-import { accountApi } from "@/services/api/account-api";
 import {
   dashboardApi,
   type AthleteDashboard,
@@ -85,61 +83,6 @@ function EditRow({
   );
 }
 
-/**
- * A "CONTA" row — completion check chip, title, subtitle, chevron.
- * `complete` paints a white check on the brand green; otherwise a faded check.
- */
-function AccountRow({
-  title,
-  subtitle,
-  complete,
-  danger,
-  onPress,
-}: {
-  title: string;
-  subtitle: string;
-  complete?: boolean;
-  /** Ação destrutiva — ícone X sobre fundo vermelho. */
-  danger?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-    >
-      <View
-        style={[
-          styles.checkBox,
-          complete && styles.checkBoxDone,
-          danger && styles.checkBoxDanger,
-        ]}
-      >
-        <Feather
-          name={danger ? "x" : "check"}
-          size={18}
-          color={
-            danger || complete ? colors.accentFg : colors.fgMuted
-          }
-          style={danger || complete ? undefined : styles.checkIncomplete}
-        />
-      </View>
-      <View style={styles.rowBody}>
-        <View style={styles.rowTitleLine}>
-          <Text variant="bodyMedium" color={colors.fg}>
-            {title}
-          </Text>
-        </View>
-        <Text variant="sm" color={colors.fgMuted}>
-          {subtitle}
-        </Text>
-      </View>
-      <Feather name="chevron-right" size={18} color={colors.fgMuted} />
-    </Pressable>
-  );
-}
-
 function StatCell({
   value,
   label,
@@ -171,7 +114,7 @@ function StatCell({
 /** "Meus dados" — editorial edit hub for the athlete's vitrine + account. */
 export function MeusDadosScreen() {
   const router = useRouter();
-  const { user, updateUser, signOut } = useAuth();
+  const { user, updateUser } = useAuth();
   const [dashboard, setDashboard] = useState<AthleteDashboard | null>(null);
   const [editing, setEditing] = useState<EditSection | null>(null);
   const [mediaCount, setMediaCount] = useState<number | null>(null);
@@ -212,58 +155,6 @@ export function MeusDadosScreen() {
     Math.floor((Date.now() - new Date(athlete.criadoEm).getTime()) / 86400000),
   );
   const vitrineDays = dashboard?.stats.daysOnPlatform ?? daysActive;
-
-  const openSupport = async () => {
-    const url = supportWhatsappUrl();
-    try {
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert(
-        "Não foi possível abrir o WhatsApp",
-        "Verifique se o WhatsApp está instalado neste aparelho.",
-      );
-    }
-  };
-
-  const doDeleteAccount = async () => {
-    try {
-      await accountApi.deleteAccount();
-      await signOut();
-    } catch {
-      Alert.alert(
-        "Não foi possível excluir",
-        "Tente novamente em instantes ou fale com o suporte.",
-      );
-    }
-  };
-
-  const confirmDeleteAccount = () => {
-    // Dupla confirmação — ação destrutiva e permanente.
-    Alert.alert(
-      "Excluir conta",
-      "Isso apaga permanentemente sua conta, perfil, mídias e conversas. Esta ação não pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Continuar",
-          style: "destructive",
-          onPress: () =>
-            Alert.alert(
-              "Tem certeza?",
-              "Sua conta e todos os seus dados serão excluídos para sempre.",
-              [
-                { text: "Cancelar", style: "cancel" },
-                {
-                  text: "Excluir definitivamente",
-                  style: "destructive",
-                  onPress: doDeleteAccount,
-                },
-              ],
-            ),
-        },
-      ],
-    );
-  };
 
   const jersey =
     athlete.numero != null ? String(athlete.numero).padStart(2, "0") : "—";
@@ -420,44 +311,6 @@ export function MeusDadosScreen() {
             subtitle={dadosSub}
             locked
             onPress={() => setEditing("dados")}
-          />
-        </View>
-
-        {/* Conta */}
-        <Text
-          variant="eyebrow"
-          color={colors.fgMuted}
-          style={styles.sectionLabel}
-        >
-          C O N T A
-        </Text>
-        <View style={styles.list}>
-          <AccountRow
-            title={athlete.emailVerificado ? "E-mail verificado" : "E-mail"}
-            subtitle={athlete.email}
-            complete={athlete.emailVerificado}
-          />
-          <AccountRow
-            title="Telefone"
-            subtitle={athlete.telefone || NAO_PREENCHIDO}
-            complete={!!athlete.telefone}
-          />
-          <AccountRow
-            title="Trocar senha"
-            subtitle={`Última troca há ${daysActive}d`}
-            complete
-          />
-          <AccountRow
-            title="Ajuda e Suporte"
-            subtitle="Fale com a Empregol no WhatsApp"
-            complete
-            onPress={openSupport}
-          />
-          <AccountRow
-            title="Excluir conta"
-            subtitle="Apaga permanentemente sua conta e seus dados"
-            danger
-            onPress={confirmDeleteAccount}
           />
         </View>
       </ScrollView>
