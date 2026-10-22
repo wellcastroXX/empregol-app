@@ -63,7 +63,7 @@ export function LoginScreen() {
               </Text>
             </Text>
             <Text variant="sm" color={colors.fgMuted} style={styles.sub}>
-              312 clubes olham hoje. Bom te ver de volta.
+              Bom te ver de volta.
             </Text>
           </View>
         </View>
@@ -124,7 +124,7 @@ export function LoginScreen() {
               color={colors.fg}
               style={styles.footerLink}
             >
-              Cadastra-se em 4 minutos ›
+              Cadastra-se aqui! ›
             </Text>
           </Pressable>
         </View>

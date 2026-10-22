@@ -4,9 +4,9 @@
 
 Criadas diretamente no banco com `emailVerified = true`.
 
-| Papel | E-mail                     | Senha           | Detalhes                                               |
-| ----- | -------------------------- | --------------- | ------------------------------------------------------ |
-| Clube | `saopaulo@empregolapp.com` | `SaoPaulo@2024` | São Paulo Futebol Clube S.A. · CNPJ 61.534.046/0001-34 |
+| Papel          | E-mail                   | Senha       | Detalhes                                           |
+| -------------- | ------------------------ | ----------- | -------------------------------------------------- |
+| Agência/Clube  | `caiovieira77@gmail.com` | `070612Aa!` | Caio Vieira · EMPREGOL LTDA. · CNPJ 67.738.429/0001-51 |
 
 # Agora no ambiente do Agente/Clube
 

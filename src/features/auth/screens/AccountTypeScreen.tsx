@@ -33,7 +33,7 @@ export function AccountTypeScreen() {
           step={1}
           total={total}
           eyebrow="V O C Ê · É · Q U E M"
-          title={"Crie susa conta"}
+          title={"Crie sua conta"}
         />
       </View>
 
@@ -48,14 +48,14 @@ export function AccountTypeScreen() {
           <RoleCard
             token=""
             name="Atleta"
-            hint="Tenho minutos pra mostrar."
+            hint="Tenho minutos para mostrar."
             active={role === "atleta"}
             onPress={() => setRole("atleta")}
           />
           <RoleCard
             token=""
             name="Contratante"
-            hint="Procuro talento esquecido."
+            hint="Procuro talentos."
             active={role === "contratante"}
             onPress={() => setRole("contratante")}
           />

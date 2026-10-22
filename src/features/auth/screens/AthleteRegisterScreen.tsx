@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -150,8 +150,15 @@ export function AthleteRegisterScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const isLastStep = step === STEP_COUNT - 1;
+
+  // A cada troca de etapa, volta o scroll ao topo — senão o ScrollView mantém o
+  // offset da etapa anterior e o 1º campo fica escondido acima.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [step]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -279,8 +286,7 @@ export function AthleteRegisterScreen() {
     {
       eyebrow: "I D E N T I D A D E · L E G A L",
       title: "Seus dados pessoais",
-      subtitle:
-        "Dados oficiais usados pra validar tua conta e firmar contratos.",
+      subtitle: "Dados oficiais usados para validar sua conta.",
     },
     {
       eyebrow: "P E R F I L · E S P O R T I V O",
@@ -291,7 +297,7 @@ export function AthleteRegisterScreen() {
       eyebrow: "S T A T U S · & · P R E T E N S Ã O",
       title: "Disponibilidade e\npretensão.",
       subtitle:
-        "Esses campos aparecem pros clubes na tua vitrine. Edita quando quiser.",
+        "Esses campos aparecem para os clubes na sua vitrine. Edite quando quiser",
     },
   ];
   const head = HEADERS[step];
@@ -308,7 +314,7 @@ export function AthleteRegisterScreen() {
             total={4}
             eyebrow={head.eyebrow}
             title={head.title}
-            accentTail={step === 2 ? ".." : "."}
+            accentTail={step === 2 ? "." : "."}
             subtitle={head.subtitle}
             onBack={handleBack}
           />
@@ -321,6 +327,7 @@ export function AthleteRegisterScreen() {
         )}
 
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
