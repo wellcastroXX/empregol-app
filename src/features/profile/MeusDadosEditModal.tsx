@@ -27,6 +27,13 @@ import type {
   PlayerLevel,
   Position,
 } from "@/types";
+import {
+  formatDate,
+  maskCpf,
+  maskDate,
+  maskPhone,
+  toIsoDate,
+} from "@/utils";
 
 /** Which "Meus dados" item the sheet is editing. */
 export type EditSection = "status" | "posicao" | "salario" | "dados";
@@ -80,7 +87,8 @@ function toDraft(a: AthleteProfile): Draft {
     perfilEsportivoUrl: a.perfilEsportivoUrl ?? "",
     salario: a.baseSalarial ? String(a.baseSalarial) : "",
     cpf: a.cpf ?? "",
-    nascimento: a.dataNascimento ?? "",
+    // A API guarda ISO com horário; o campo exibe e edita em DD/MM/AAAA.
+    nascimento: a.dataNascimento ? formatDate(a.dataNascimento) : "",
     naturalidade: a.naturalidade ?? "",
     telefone: a.telefone ?? "",
   };
@@ -114,11 +122,14 @@ export function MeusDadosEditModal({
   onClose,
 }: MeusDadosEditModalProps) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(athlete));
+  /** Virou true no primeiro SALVAR — libera os erros de validação. */
+  const [tried, setTried] = useState(false);
 
   // Re-seed whenever the sheet (re)opens, so it mirrors the latest profile.
   const [seen, setSeen] = useState(false);
   if (visible && !seen) {
     setDraft(toDraft(athlete));
+    setTried(false);
     setSeen(true);
   } else if (!visible && seen) {
     setSeen(false);
@@ -134,6 +145,16 @@ export function MeusDadosEditModal({
       if (d.posicoes.length >= MAX_POSICOES) return d;
       return { ...d, posicoes: [...d.posicoes, value] };
     });
+
+  // `""` = campo vazio · `null` = não parseia · ISO = válida.
+  const nascimentoIso = draft.nascimento ? toIsoDate(draft.nascimento) : "";
+  // Não acusa erro enquanto digita: só quando a data está completa (e errada)
+  // ou quando o SALVAR foi tentado com ela pela metade.
+  let nascimentoError: string | undefined;
+  if (nascimentoIso === null) {
+    if (draft.nascimento.length === 10) nascimentoError = "Data inválida.";
+    else if (tried) nascimentoError = "Complete a data de nascimento.";
+  }
 
   const save = () => {
     switch (section) {
@@ -159,9 +180,13 @@ export function MeusDadosEditModal({
         onSave({ baseSalarial: int(draft.salario) });
         break;
       case "dados":
+        // Data incompleta ou inválida: não salva, para não gravar lixo. O erro
+        // aparece no campo em vez de o botão simplesmente não fazer nada.
+        setTried(true);
+        if (nascimentoIso === null) return;
         onSave({
           cpf: draft.cpf.trim(),
-          dataNascimento: draft.nascimento.trim(),
+          dataNascimento: nascimentoIso,
           naturalidade: draft.naturalidade.trim(),
           telefone: draft.telefone.trim(),
         });
@@ -321,16 +346,20 @@ export function MeusDadosEditModal({
                 <TextField
                   label="CPF"
                   value={draft.cpf}
-                  onChangeText={(v) => patch({ cpf: v })}
+                  onChangeText={(v) => patch({ cpf: maskCpf(v) })}
                   keyboardType="number-pad"
                   placeholder="000.000.000-00"
+                  maxLength={14}
                   mono
                 />
                 <TextField
                   label="Data de nascimento"
                   value={draft.nascimento}
-                  onChangeText={(v) => patch({ nascimento: v })}
-                  placeholder="AAAA-MM-DD"
+                  onChangeText={(v) => patch({ nascimento: maskDate(v) })}
+                  placeholder="DD/MM/AAAA"
+                  keyboardType="number-pad"
+                  maxLength={10}
+                  error={nascimentoError}
                   mono
                 />
                 <TextField
@@ -342,9 +371,10 @@ export function MeusDadosEditModal({
                 <TextField
                   label="Telefone"
                   value={draft.telefone}
-                  onChangeText={(v) => patch({ telefone: v })}
+                  onChangeText={(v) => patch({ telefone: maskPhone(v) })}
                   keyboardType="phone-pad"
                   placeholder="(00) 00000-0000"
+                  maxLength={16}
                   mono
                 />
               </>

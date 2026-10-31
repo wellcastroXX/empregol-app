@@ -15,15 +15,19 @@ export function formatNumber(value: number): string {
   return new Intl.NumberFormat('pt-BR').format(value);
 }
 
-/** ISO date → 21/05/2026 */
+/**
+ * ISO date → 21/05/2026.
+ *
+ * Lê o dia no calendário UTC de propósito: datas de nascimento são gravadas
+ * como meia-noite UTC, e em fuso negativo (BRT = UTC-3) o dia local cai para
+ * o anterior — 1990-05-12T00:00:00Z viraria 11/05/1990.
+ */
 export function formatDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${date.getUTCFullYear()}`;
 }
 
 /** 178 → "1,78 m" */

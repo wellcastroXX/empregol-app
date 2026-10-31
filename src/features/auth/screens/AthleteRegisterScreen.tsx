@@ -48,6 +48,7 @@ import {
   maskDate,
   maskPhone,
   maskThousands,
+  toIsoDate,
   unmask,
 } from "@/utils";
 
@@ -115,13 +116,6 @@ function parseAlturaCm(raw: string): number | null {
   if (!v) return null;
   const cm = v < 3 ? Math.round(v * 100) : Math.round(v); // <3 = metros; senão já é cm
   return cm >= 100 && cm <= 250 ? cm : null;
-}
-
-function toIsoDate(value: string): string | null {
-  const [d, m, y] = value.split("/").map(Number);
-  if (!d || !m || !y || value.length < 10) return null;
-  const date = new Date(Date.UTC(y, m - 1, d));
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 /** Multi-step athlete cadastro — Identidade · Esportivo · Status. */

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Empregol",
     "slug": "empregol-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon-empregol.png",
     "scheme": "empregolapp",
@@ -13,7 +13,11 @@
       "googleServicesFile": "./firebase/GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["instagram-stories", "instagram", "whatsapp"]
+        "LSApplicationQueriesSchemes": [
+          "instagram-stories",
+          "instagram",
+          "whatsapp"
+        ]
       }
     },
     "android": {
@@ -24,9 +28,7 @@
         "foregroundImage": "./assets/images/icon-empregol-fg.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "output": "static",

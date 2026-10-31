@@ -62,3 +62,17 @@ export function unmask(value: string): string {
 export function parseCurrency(value: string): number {
   return Number(digits(value)) / 100;
 }
+
+/**
+ * Masked "12/05/1990" → ISO em meia-noite UTC. `null` se incompleta ou inválida.
+ * Inverso de `formatDate`.
+ */
+export function toIsoDate(value: string): string | null {
+  const [d, m, y] = value.split('/').map(Number);
+  if (!d || !m || !y || value.length < 10) return null;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (Number.isNaN(date.getTime())) return null;
+  // Date.UTC transborda datas inexistentes (31/02 → 03/03); rejeita essas.
+  if (date.getUTCDate() !== d || date.getUTCMonth() !== m - 1) return null;
+  return date.toISOString();
+}
