@@ -67,6 +67,10 @@ export function ContractorHome({
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  /** Cadastros dos últimos 7 dias — contagem do servidor, não da página. */
+  const [novosNaSemana, setNovosNaSemana] = useState(0);
+  /** Total de atletas ativos na plataforma. */
+  const [totalAtletas, setTotalAtletas] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -75,6 +79,19 @@ export function ContractorHome({
       .then((data) => active && setAthletes(data))
       .catch(() => active && setAthletes([]))
       .finally(() => active && setLoading(false));
+    // `limit: 1` de propósito: só interessa o `total` que a API devolve, não
+    // os registros. Duas contagens baratas em vez de um número inventado.
+    const seteDiasAtras = new Date(
+      Date.now() - 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    profileService
+      .listAthletePage({ cadastradosApos: seteDiasAtras, limit: 1 })
+      .then((page) => active && setNovosNaSemana(page.total))
+      .catch(() => {});
+    profileService
+      .listAthletePage({ limit: 1 })
+      .then((page) => active && setTotalAtletas(page.total))
+      .catch(() => {});
     conversationsApi
       .listMine()
       .then((cs) => {
@@ -103,7 +120,6 @@ export function ContractorHome({
 
   const clubName = contractor.razaoSocial ?? contractor.nome;
   const featured = athletes.slice(0, 6);
-  const total = athletes.length;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -150,16 +166,19 @@ export function ContractorHome({
           </Text>
           <Text style={styles.headline} color={D.fg}>
             <Text style={styles.headline} color={D.accent}>
-              {total}
+              {novosNaSemana}
             </Text>
-            {` atletas novos\npara você essa semana`}
+            {novosNaSemana === 1
+              ? ` atleta novo\nnesta semana`
+              : ` atletas novos\nnesta semana`}
             <Text style={styles.headline} color={D.accent}>
               .
             </Text>
           </Text>
           <Text variant="sm" color={D.muted}>
-            Filtrados pelos teus critérios — ST livres ou em fim de contrato,
-            18–30 anos, 1.75m+.
+            {totalAtletas > 0
+              ? `${totalAtletas} atletas disponíveis na plataforma. Use a busca para filtrar por posição, idade e status.`
+              : "Use a busca para filtrar por posição, idade e status."}
           </Text>
         </View>
 
@@ -217,7 +236,10 @@ export function ContractorHome({
 
         {/* Stats band */}
         <View style={styles.statsBand}>
-          <StatCell value={String(total)} label="NOVOS HOJE" />
+          {/* "NOVOS HOJE" mostrava o tamanho da página de atletas, que não tem
+              relação com cadastros do dia. A faixa semanal é a que temos
+              contagem real, então o rótulo passa a dizer o que o número é. */}
+          <StatCell value={String(novosNaSemana)} label="NOVOS NA SEMANA" />
           <StatCell
             value={String(favoriteAthletes.length)}
             label="NOS FAVORITOS"

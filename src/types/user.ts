@@ -18,6 +18,12 @@ export interface BaseUser {
   telefone: string;
   emailVerificado: boolean;
   verificacao: VerificationStatus;
+  /**
+   * Campos que faltam para o perfil contar como completo, como a API calcula
+   * (ex: `["avatarUrl", "city"]`). Alimenta o "complete seu perfil" — o selo
+   * verificado é automático pela completude, com veto da administração.
+   */
+  verificacaoPendencias?: string[];
   fotoUrl?: string;
   redeSocial?: string;
   informacoesAdicionais?: string;

@@ -3,6 +3,7 @@ import type {
     AgencyStatus,
     AthleteMediaItem,
     AthleteProfile,
+    AthleteStats,
     AvailabilityStatus,
     ContractorKind,
     ContractorProfile,
@@ -12,6 +13,7 @@ import type {
     Position,
     SignUpPayload,
     UserProfile,
+    VerificationStatus,
 } from "@/types";
 import {
     ageFromBirthdate,
@@ -20,6 +22,17 @@ import {
     maskPhone,
     unmask,
 } from "@/utils";
+
+/**
+ * A API devolve `verified` booleano — ela já combina completude do perfil com
+ * o veto da administração. O domínio usa um status de três estados, então
+ * ausência de selo é "pending".
+ *
+ * Importante não assumir `true` quando o campo vem `undefined`: era justamente
+ * o que fazia todo perfil aparecer como verificado.
+ */
+const toVerificacao = (verified?: boolean): VerificationStatus =>
+  verified ? "verified" : "pending";
 
 /* ── Enum maps (domain ↔ API) ───────────────────────────────────────────────── */
 
@@ -224,6 +237,10 @@ interface ApiAthlete {
   gamesThisSeason?: number | null;
   minutesPlayed?: number | null;
   createdAt?: string;
+  /** Selo verificado, calculado pela API (completude + veto da adm). */
+  verified?: boolean;
+  /** Campos que faltam para o perfil contar como completo. */
+  verificationMissing?: string[];
 }
 interface ApiContractor {
   id: string;
@@ -237,6 +254,8 @@ interface ApiContractor {
   additionalInfo?: string | null;
   avatarUrl?: string | null;
   createdAt?: string;
+  verified?: boolean;
+  verificationMissing?: string[];
 }
 
 export function toUserProfile(user: ApiUser): UserProfile {
@@ -257,7 +276,8 @@ function toAthleteProfile(user: ApiUser, a: ApiAthlete): AthleteProfile {
     email: user.email,
     telefone: maskPhone(a.phone),
     emailVerificado: user.emailVerified ?? true,
-    verificacao: "verified",
+    verificacao: toVerificacao(a.verified),
+    verificacaoPendencias: a.verificationMissing,
     fotoUrl: a.avatarUrl ?? undefined,
     redeSocial: a.socialMedia ?? undefined,
     informacoesAdicionais: a.additionalInfo ?? undefined,
@@ -300,7 +320,8 @@ function toContractorProfile(
     email: user.email,
     telefone: maskPhone(c.phone),
     emailVerificado: user.emailVerified ?? true,
-    verificacao: "verified",
+    verificacao: toVerificacao(c.verified),
+    verificacaoPendencias: c.verificationMissing,
     fotoUrl: c.avatarUrl ?? undefined,
     redeSocial: c.socialMedia ?? undefined,
     informacoesAdicionais: c.additionalInfo ?? undefined,
@@ -414,6 +435,25 @@ interface ApiPublicAthlete extends Partial<ApiAthlete> {
 }
 
 /**
+ * Temporadas da API → domínio, da mais recente para a mais antiga.
+ *
+ * A seção de estatísticas percorre esta lista para o atleta arrastar entre os
+ * anos; antes só a primeira chegava à tela.
+ */
+export function toTemporadas(seasons: ApiSeasonStats[] = []): AthleteStats[] {
+  return [...seasons]
+    .sort((a, b) => b.year - a.year)
+    .map((season) => ({
+      ano: season.year,
+      gols: season.goals,
+      assistencias: season.assists,
+      jogosNaTemporada: season.gamesPlayed,
+      minutosNaTemporada: season.minutesPlayed,
+      ultimoClube: season.lastClub ?? undefined,
+    }));
+}
+
+/**
  * Maps a public athlete (no private contact data) to AthleteProfile.
  * Private fields are left empty — the profile UI hides them for non-own views.
  */
@@ -455,7 +495,8 @@ export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
     email: "",
     telefone: "",
     emailVerificado: true,
-    verificacao: "verified",
+    verificacao: toVerificacao(a.verified),
+    verificacaoPendencias: a.verificationMissing,
     fotoUrl: a.avatarUrl ?? undefined,
     redeSocial: a.socialMedia ?? undefined,
     informacoesAdicionais: a.additionalInfo ?? undefined,
@@ -480,6 +521,7 @@ export function toPublicAthleteProfile(a: ApiPublicAthlete): AthleteProfile {
     perfilEsportivoUrl: a.sportsProfileUrl ?? undefined,
     isFavorited: a.isFavorited,
     stats,
+    temporadas: toTemporadas(seasons),
     trajetoria: seasons
       .filter((season) => !!season.lastClub)
       .map((season) => ({

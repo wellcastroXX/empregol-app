@@ -31,10 +31,11 @@ import { AvatarSheet } from "@/features/profile/AvatarSheet";
 import { profileService } from "@/services";
 import { conversationsApi } from "@/services/api/conversations-api";
 import { favoritesApi } from "@/services/api/favorites-api";
-import { toMediaItems } from "@/services/api/mappers";
+import { toMediaItems, toTemporadas } from "@/services/api/mappers";
 import { mediaApi } from "@/services/api/media-api";
+import { seasonStatsApi } from "@/services/api/season-stats-api";
 import { colors, palette, radii, spacing } from "@/theme";
-import type { AthleteMediaItem, AthleteProfile } from "@/types";
+import type { AthleteMediaItem, AthleteProfile, AthleteStats as AthleteStatsData } from "@/types";
 import {
   AthleteAboutSection,
   AthleteStats,
@@ -110,6 +111,7 @@ export function AthleteProfileScreen({
   const [favoriteActionLoading, setFavoriteActionLoading] = useState(false);
   const [favoriteStatusLoaded, setFavoriteStatusLoaded] = useState(false);
   const [ownMedia, setOwnMedia] = useState<AthleteMediaItem[]>([]);
+  const [ownTemporadas, setOwnTemporadas] = useState<AthleteStatsData[]>([]);
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [shareSheet, setShareSheet] = useState(false);
   const [toast, setToast] = useState<{
@@ -130,6 +132,23 @@ export function AthleteProfileScreen({
       mediaApi
         .listMine()
         .then((list) => active && setOwnMedia(toMediaItems(list)))
+        .catch(() => undefined);
+      return () => {
+        active = false;
+      };
+    }, [scout]),
+  );
+
+  // Perfil próprio: as temporadas não vêm no payload do usuário, só a mais
+  // recente (denormalizada). Sem esta busca a seção de estatísticas ficaria
+  // presa num único ano, sem ter o que arrastar.
+  useFocusEffect(
+    useCallback(() => {
+      if (scout) return;
+      let active = true;
+      seasonStatsApi
+        .list()
+        .then((list) => active && setOwnTemporadas(toTemporadas(list)))
         .catch(() => undefined);
       return () => {
         active = false;
@@ -275,7 +294,11 @@ export function AthleteProfileScreen({
 
           <View style={styles.ownBody}>
             <AthleteStats
-              athlete={athlete}
+              athlete={
+                ownTemporadas.length
+                  ? { ...athlete, temporadas: ownTemporadas }
+                  : athlete
+              }
               onPressClube={() => router.push("/estatisticas")}
             />
             {showPersonalData && <PersonalDataSection athlete={athlete} />}

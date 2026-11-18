@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -37,6 +38,7 @@ const TABS: { key: "all" | ContractorType; label: string }[] = [
  * acabou de entrar. Dá ao atleta noção de exposição e oportunidade.
  */
 export function MercadoScreen() {
+  const router = useRouter();
   const [tab, setTab] = useState<"all" | ContractorType>("all");
   const [all, setAll] = useState<MarketContractor[]>([]);
   const [total, setTotal] = useState(0);
@@ -169,7 +171,13 @@ export function MercadoScreen() {
         ) : (
           <View>
             {filtered.map((c) => (
-              <View key={c.id} style={styles.row}>
+              <Pressable
+                key={c.id}
+                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                onPress={() => router.push(`/contratantes/${c.id}`)}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver perfil de ${c.companyName ?? c.name}`}
+              >
                 <Avatar
                   name={c.companyName ?? c.name}
                   uri={c.avatarUrl ?? undefined}
@@ -189,7 +197,12 @@ export function MercadoScreen() {
                     {timeAgoShort(c.createdAt).toUpperCase()}
                   </Text>
                 </View>
-              </View>
+                <Feather
+                  name="chevron-right"
+                  size={18}
+                  color={colors.fgMuted}
+                />
+              </Pressable>
             ))}
           </View>
         )}
@@ -261,5 +274,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.rule,
   },
+  rowPressed: { opacity: 0.6 },
   rowBody: { flex: 1, gap: 3 },
 });

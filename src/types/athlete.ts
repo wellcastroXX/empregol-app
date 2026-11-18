@@ -101,6 +101,14 @@ export interface AthleteProfile extends BaseUser {
   /** Link do perfil esportivo externo (Transfermarkt/OGol ou outro). */
   perfilEsportivoUrl?: string;
   stats?: AthleteStats;
+  /**
+   * Todas as temporadas reportadas, da mais recente para a mais antiga.
+   *
+   * `stats` é a primeira delas — fica para não quebrar quem já lê só a
+   * temporada atual. A seção de estatísticas usa esta lista para o atleta
+   * arrastar e ver os anos anteriores.
+   */
+  temporadas?: AthleteStats[];
   trajetoria?: CareerEntry[];
   /** Mídias da vitrine com metadados (preserva título, categoria, jogo, etc.). */
   media?: AthleteMediaItem[];

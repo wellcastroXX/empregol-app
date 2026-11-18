@@ -1,13 +1,44 @@
 import { Feather } from "@expo/vector-icons";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import {
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import { SectionHeader, Text } from "@/components/ui";
 import { colors, fontFamily, palette, radii, spacing } from "@/theme";
-import type { AthleteProfile } from "@/types";
+import type { AthleteProfile, AthleteStats as Temporada } from "@/types";
 
 function formatMinutos(min: number | undefined): string {
   if (min == null) return "—";
   return `${min.toLocaleString("pt-BR")}'`;
+}
+
+function cellsFor(s: Temporada | undefined) {
+  return [
+    { value: s?.gols != null ? String(s.gols) : "—", label: "GOLS" },
+    {
+      value: s?.assistencias != null ? String(s.assistencias) : "—",
+      label: "ASSIST.",
+    },
+    {
+      value: s?.jogosNaTemporada != null ? String(s.jogosNaTemporada) : "—",
+      label: "JOGOS",
+    },
+    {
+      value:
+        s?.minutosNaTemporada != null
+          ? formatMinutos(s.minutosNaTemporada)
+          : "—",
+      label: "MINUTOS",
+    },
+    // Cartões temporariamente ocultos (amarelos/vermelhos) — manter p/ uso futuro.
+  ];
 }
 
 function StatCell({
@@ -52,62 +83,88 @@ export function AthleteStats({
   /** Quando presente, o card "Clube atual" vira botão (ex.: ir p/ Estatísticas). */
   onPressClube?: () => void;
 }) {
-  const s = athlete.stats;
-  const year = s?.ano;
-
   const fg = dark ? palette.giz : colors.fg;
   const muted = dark ? palette.cinzaOnDark : colors.fgMuted;
 
-  const cells = [
-    { value: s?.gols != null ? String(s.gols) : "—", label: "GOLS" },
-    {
-      value: s?.assistencias != null ? String(s.assistencias) : "—",
-      label: "ASSIST.",
-    },
-    {
-      value: s?.jogosNaTemporada != null ? String(s.jogosNaTemporada) : "—",
-      label: "JOGOS",
-    },
-    {
-      value:
-        s?.minutosNaTemporada != null
-          ? formatMinutos(s.minutosNaTemporada)
-          : "—",
-      label: "MINUTOS",
-    },
-    // Cartões temporariamente ocultos (amarelos/vermelhos) — manter p/ uso futuro.
-    // {
-    //   value: s?.cartoesAmarelos != null ? String(s.cartoesAmarelos) : "—",
-    //   label: "AMARELOS",
-    // },
-    // {
-    //   value: s?.cartoesVermelhos != null ? String(s.cartoesVermelhos) : "—",
-    //   label: "VERMELHOS",
-    // },
-  ];
+  // `temporadas` chega da mais recente para a mais antiga. Sem ela, cai no
+  // `stats` de sempre — é o caso do perfil que ainda não carregou as
+  // temporadas, e aí a seção se comporta exatamente como antes.
+  let temporadas: Temporada[] = [];
+  if (athlete.temporadas?.length) temporadas = athlete.temporadas;
+  else if (athlete.stats) temporadas = [athlete.stats];
+
+  const [page, setPage] = useState(0);
+  const [width, setWidth] = useState(0);
+
+  const ativa = temporadas[Math.min(page, temporadas.length - 1)];
+  const multi = temporadas.length > 1;
+
+  const onLayout = (e: LayoutChangeEvent) =>
+    setWidth(e.nativeEvent.layout.width);
+
+  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (width <= 0) return;
+    setPage(Math.round(e.nativeEvent.contentOffset.x / width));
+  };
+
+  const grid = (s: Temporada | undefined, key: string | number) => (
+    <View key={key} style={[styles.grid, dark && styles.gridDark, !!width && { width }]}>
+      {cellsFor(s).map((c) => (
+        <StatCell
+          key={c.label}
+          value={c.value}
+          label={c.label}
+          fg={fg}
+          muted={muted}
+        />
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.wrapper}>
       <SectionHeader
         eyebrow={
-          year ? `E S T A T Í S T I C A S · ${year}` : "E S T A T Í S T I C A S"
+          ativa?.ano
+            ? `E S T A T Í S T I C A S · ${ativa.ano}`
+            : "E S T A T Í S T I C A S"
         }
         dark={dark}
       />
 
-      <View style={[styles.grid, dark && styles.gridDark]}>
-        {cells.map((c) => (
-          <StatCell
-            key={c.label}
-            value={c.value}
-            label={c.label}
-            fg={fg}
-            muted={muted}
-          />
-        ))}
-      </View>
+      {multi ? (
+        <View onLayout={onLayout}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onScrollEnd}
+            // Só rola depois de medir a largura: sem ela as páginas não têm
+            // como ocupar exatamente um "snap".
+            scrollEnabled={width > 0}
+          >
+            {temporadas.map((t, i) => grid(t, t.ano ?? i))}
+          </ScrollView>
 
-      {/* Clube Atual — botão p/ Estatísticas quando onPressClube é passado */}
+          {/* Anos como indicador: diz quantas temporadas existem e qual está
+              à frente, o que uma fileira de pontos não comunicaria. */}
+          <View style={styles.years}>
+            {temporadas.map((t, i) => (
+              <Text
+                key={t.ano ?? i}
+                style={styles.yearTick}
+                color={i === page ? fg : muted}
+              >
+                {t.ano ?? "—"}
+              </Text>
+            ))}
+          </View>
+        </View>
+      ) : (
+        grid(temporadas[0], "single")
+      )}
+
+      {/* Clube da temporada à frente. No ano mais recente é o clube atual. */}
       {showClub && (
         <Pressable
           disabled={!onPressClube}
@@ -120,11 +177,11 @@ export function AthleteStats({
           ]}
         >
           <Text variant="monoLabel" color={muted}>
-            CLUBE ATUAL
+            {page === 0 ? "CLUBE ATUAL" : `CLUBE · ${ativa?.ano ?? ""}`}
           </Text>
           <View style={styles.clubRight}>
             <Text variant="smMedium" color={fg}>
-              {s?.ultimoClube || "-"}
+              {ativa?.ultimoClube || "-"}
             </Text>
             {!!onPressClube && (
               <Feather name="chevron-right" size={18} color={muted} />
@@ -183,5 +240,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+  },
+  years: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: -spacing.md,
+  },
+  yearTick: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 10,
+    letterSpacing: 1,
+    fontVariant: ["tabular-nums"],
   },
 });

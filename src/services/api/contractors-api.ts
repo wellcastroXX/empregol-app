@@ -27,7 +27,35 @@ export interface ExploreContractorsParams {
   limit?: number;
 }
 
+/**
+ * Clube/agência como o atleta vê (GET /contractors/:id/basic).
+ *
+ * A API devolve só esta lista branca. Telefone, e-mail, CNPJ, razão social,
+ * redes sociais e plano não saem da API — não é o app que esconde.
+ */
+export interface PublicContractor {
+  id: string;
+  type: ContractorType;
+  name: string;
+  avatarUrl?: string | null;
+  about?: string | null;
+  /** ISO — "na Empregol desde". */
+  memberSince: string;
+  verified: boolean;
+  /** Acessou nos últimos 7 dias. */
+  activeThisWeek: boolean;
+  status?: string;
+}
+
 export const contractorsApi = {
+  /** Perfil público de um clube/agência. */
+  async getById(id: string): Promise<PublicContractor> {
+    const res = await apiRequest<{ status: string; data: PublicContractor }>(
+      `/contractors/${id}/basic`,
+    );
+    return res.data;
+  },
+
   /** Mercado — clubes/Agências da plataforma (GET /explore/contractors). */
   async explore(
     params: ExploreContractorsParams = {},

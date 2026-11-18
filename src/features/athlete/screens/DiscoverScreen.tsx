@@ -40,8 +40,6 @@ const D = {
   accent: palette.gramado,
 };
 
-const ATHLETE_LIST_LIMIT = 25;
-
 const posShort = (a: AthleteProfile) =>
   POSITIONS.find((p) => p.value === a.posicao)?.short ?? "";
 const heightM = (a: AthleteProfile) => `${(a.alturaCm / 100).toFixed(2)}M`;
@@ -54,48 +52,35 @@ const SORTS = [
 ] as const;
 type SortKey = (typeof SORTS)[number]["key"];
 
+/** Atletas por página na lista de resultados. */
+const PAGE_SIZE = 20;
+
+/**
+ * Categorias como filtro rápido.
+ *
+ * Antes eram acordeões no rodapé, cada um com a sua própria lista — o mesmo
+ * atleta aparecia em vários, e nenhum deles conversava com a busca ou com os
+ * filtros do modal. Agora são chips que recortam a lista principal, então a
+ * contagem, a ordenação e a paginação valem para o que está na tela.
+ *
+ * "Por região" saiu: o predicado era `!!naturalidade`, que casa com quase
+ * todo mundo. Recorte por local já existe em estado/cidade no modal.
+ */
 const CATEGORIES: {
   key: string;
-  title: string;
-  green: boolean;
+  label: string;
   pred: (a: AthleteProfile) => boolean;
 }[] = [
-  {
-    key: "masc",
-    title: "Atletas Masculinos",
-    green: true,
-    pred: (a) => a.genero === "masculino",
-  },
-  {
-    key: "fem",
-    title: "Atletas Femininas",
-    green: false,
-    pred: (a) => a.genero === "feminino",
-  },
-  {
-    key: "regiao",
-    title: "Por região",
-    green: true,
-    pred: (a) => !!a.naturalidade,
-  },
-  {
-    key: "livre",
-    title: "Atletas Livres",
-    green: false,
-    pred: (a) => a.disponibilidade === "livre",
-  },
-  {
-    key: "amador",
-    title: "Atletas Amadores",
-    green: true,
-    pred: (a) => a.nivel === "amador",
-  },
+  { key: "livre", label: "LIVRES", pred: (a) => a.disponibilidade === "livre" },
   {
     key: "pro",
-    title: "Atletas Pro",
-    green: false,
+    label: "PRO",
     pred: (a) => a.nivel === "profissional",
   },
+  { key: "amador", label: "AMADORES", pred: (a) => a.nivel === "amador" },
+  { key: "base", label: "BASE", pred: (a) => a.nivel === "base" },
+  { key: "masc", label: "MASCULINO", pred: (a) => a.genero === "masculino" },
+  { key: "fem", label: "FEMININO", pred: (a) => a.genero === "feminino" },
 ];
 
 function matches(a: AthleteProfile, f: AthleteFilters): boolean {
@@ -202,14 +187,26 @@ export function DiscoverScreen() {
   const [pendingFavorites, setPendingFavorites] = useState<Set<string>>(
     new Set(),
   );
-  const [openCat, setOpenCat] = useState<string | null>(null);
+  /** Categoria rápida ativa; `null` = todas. */
+  const [cat, setCat] = useState<string | null>(null);
+  /** Página atual da lista de resultados, base 0. */
+  const [page, setPage] = useState(0);
+  /** Total real no servidor — pode ser maior que `athletes` se o teto cortou. */
+  const [serverTotal, setServerTotal] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      // Varre as páginas: as contagens das categorias são calculadas no
+      // cliente, então carregar só a primeira página fazia cada aba contar
+      // sobre uma amostra em vez do conjunto todo.
       profileService
-        .listAthletes({ limit: ATHLETE_LIST_LIMIT })
-        .then((data) => active && setAthletes(data))
+        .listAllAthletes()
+        .then((page) => {
+          if (!active) return;
+          setAthletes(page.athletes);
+          setServerTotal(page.total);
+        })
         .catch(() => active && setFailed(true))
         .finally(() => active && setLoading(false));
       return () => {
@@ -218,11 +215,15 @@ export function DiscoverScreen() {
     }, []),
   );
 
+  const catPred = CATEGORIES.find((c) => c.key === cat)?.pred;
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const list = athletes.filter(
       (a) =>
-        (!term || a.nome.toLowerCase().includes(term)) && matches(a, filters),
+        (!term || a.nome.toLowerCase().includes(term)) &&
+        matches(a, filters) &&
+        (!catPred || catPred(a)),
     );
     const byKey: Record<SortKey, (a: AthleteProfile) => number> = {
       gols: (a) => -(a.stats?.gols ?? 0),
@@ -235,7 +236,26 @@ export function DiscoverScreen() {
         ? a.nome.localeCompare(b.nome)
         : byKey[sort](a) - byKey[sort](b),
     );
-  }, [athletes, search, filters, sort]);
+  }, [athletes, search, filters, sort, catPred]);
+
+  // Contagem por categoria sobre a busca e os filtros já aplicados: o número
+  // no chip tem de ser o que aquele chip devolve se for tocado.
+  const base = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return athletes.filter(
+      (a) =>
+        (!term || a.nome.toLowerCase().includes(term)) && matches(a, filters),
+    );
+  }, [athletes, search, filters]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Clamp em vez de resetar: mudar de filtro com a página 3 aberta cairia num
+  // vazio, e um `setPage` dentro de efeito faria render duplo.
+  const current = Math.min(page, totalPages - 1);
+  const pageItems = filtered.slice(
+    current * PAGE_SIZE,
+    current * PAGE_SIZE + PAGE_SIZE,
+  );
 
   const toggleFav = async (id: string) => {
     if (pendingFavorites.has(id)) return;
@@ -311,6 +331,66 @@ export function DiscoverScreen() {
           </Pressable>
         </View>
 
+        {/* Filtros rápidos — contagem visível em cada recorte. */}
+        {!loading && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.catRow}
+          >
+            <Pressable
+              style={[styles.cat, !cat && styles.catOn]}
+              onPress={() => {
+                setCat(null);
+                setPage(0);
+              }}
+              accessibilityRole="button"
+            >
+              <Text
+                style={styles.catText}
+                color={!cat ? palette.tinta : D.fg}
+              >
+                TODOS
+              </Text>
+              <Text
+                style={styles.catCount}
+                color={!cat ? palette.tinta : D.muted}
+              >
+                {base.length}
+              </Text>
+            </Pressable>
+
+            {CATEGORIES.map((c) => {
+              const on = cat === c.key;
+              const n = base.filter(c.pred).length;
+              return (
+                <Pressable
+                  key={c.key}
+                  style={[styles.cat, on && styles.catOn]}
+                  onPress={() => {
+                    setCat(on ? null : c.key);
+                    setPage(0);
+                  }}
+                  accessibilityRole="button"
+                >
+                  <Text
+                    style={styles.catText}
+                    color={on ? palette.tinta : D.fg}
+                  >
+                    {c.label}
+                  </Text>
+                  <Text
+                    style={styles.catCount}
+                    color={on ? palette.tinta : D.muted}
+                  >
+                    {n}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+
         {chips.length > 0 && (
           <View style={styles.activeWrap}>
             <View style={styles.activeHead}>
@@ -356,7 +436,11 @@ export function DiscoverScreen() {
               {filtered.length}
             </Text>
             <Text variant="monoLabel" color={D.muted}>
-              TOP ATLETAS
+              {/* "de N" só quando há recorte: sem filtro e com tudo carregado,
+                  repetir o mesmo número duas vezes só confunde. */}
+              {filtered.length < serverTotal
+                ? `DE ${serverTotal} ATLETAS`
+                : "ATLETAS"}
             </Text>
           </View>
           <Pressable
@@ -394,7 +478,7 @@ export function DiscoverScreen() {
             message="Ajuste a busca ou os filtros."
           />
         ) : (
-          filtered.map((a) => (
+          pageItems.map((a) => (
             <AthleteRow
               key={a.id}
               a={a}
@@ -406,82 +490,59 @@ export function DiscoverScreen() {
           ))
         )}
 
-        {/* Acordeões expansíveis depois dos resultados, em largura total. */}
-        <View style={styles.accordionBleed}>
-          <View style={styles.accordions}>
-            {CATEGORIES.map((cat) => {
-              const list = athletes.filter(cat.pred);
-              const isOpen = openCat === cat.key;
-              // Verde → texto creme · Creme → texto tinta.
-              const fg = cat.green ? palette.giz : palette.tinta;
-              const sub = cat.green
-                ? "rgba(251,250,245,0.65)"
-                : "rgba(20,20,19,0.55)";
-              const divider = cat.green
-                ? "rgba(251,250,245,0.15)"
-                : "rgba(20,20,19,0.1)";
-              return (
-                <View key={cat.key}>
-                  <Pressable
-                    style={[
-                      styles.accHead,
-                      cat.green ? styles.accGreen : styles.accCreme,
-                    ]}
-                    onPress={() => setOpenCat(isOpen ? null : cat.key)}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.accTitle} color={fg}>
-                      {cat.title}
-                      <Text style={styles.accCount} color={sub}>
-                        {"  "}
-                        {list.length}
-                      </Text>
-                    </Text>
-                    <Feather
-                      name={isOpen ? "chevron-up" : "chevron-down"}
-                      size={18}
-                      color={fg}
-                    />
-                  </Pressable>
-                  {isOpen && (
-                    <View
-                      style={[
-                        styles.accBody,
-                        cat.green ? styles.accGreenBody : styles.accCremeBody,
-                      ]}
-                    >
-                      {list.length === 0 ? (
-                        <Text variant="sm" color={sub} style={styles.accEmpty}>
-                          Nenhum atleta nesta categoria ainda.
-                        </Text>
-                      ) : (
-                        list.slice(0, 12).map((a) => (
-                          <Pressable
-                            key={a.id}
-                            style={[styles.accRow, { borderTopColor: divider }]}
-                            onPress={() => router.push(`/athletes/${a.id}`)}
-                            accessibilityRole="button"
-                          >
-                            <Text
-                              style={styles.accName}
-                              color={fg}
-                              numberOfLines={1}
-                            >
-                              {a.nome}
-                            </Text>
-                            <Text style={styles.accMeta} color={sub}>
-                              {posShort(a)} · {a.idade}
-                            </Text>
-                          </Pressable>
-                        ))
-                      )}
-                    </View>
-                  )}
-                </View>
-              );
-            })}
+        {/* Paginação no rodapé da lista: é onde o leitor termina a página. Só
+            aparece com mais de uma página — controle inerte confunde. */}
+        {!loading && totalPages > 1 && (
+          <View style={styles.pagerFoot}>
+            <Pressable
+              style={[styles.pagerBtn, current === 0 && styles.pagerBtnOff]}
+              disabled={current === 0}
+              onPress={() => setPage(current - 1)}
+              accessibilityRole="button"
+              accessibilityLabel="Página anterior"
+            >
+              <Feather
+                name="chevron-left"
+                size={16}
+                color={current === 0 ? D.muted : D.fg}
+              />
+              <Text
+                style={styles.pagerBtnText}
+                color={current === 0 ? D.muted : D.fg}
+              >
+                ANTERIOR
+              </Text>
+            </Pressable>
+
+            <Text style={styles.pagerLabel} color={D.muted}>
+              {current + 1} / {totalPages}
+            </Text>
+
+            <Pressable
+              style={[
+                styles.pagerBtn,
+                current >= totalPages - 1 && styles.pagerBtnOff,
+              ]}
+              disabled={current >= totalPages - 1}
+              onPress={() => setPage(current + 1)}
+              accessibilityRole="button"
+              accessibilityLabel="Próxima página"
+            >
+              <Text
+                style={styles.pagerBtnText}
+                color={current >= totalPages - 1 ? D.muted : D.fg}
+              >
+                PRÓXIMA
+              </Text>
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={current >= totalPages - 1 ? D.muted : D.fg}
+              />
+            </Pressable>
           </View>
-        </View>
+        )}
+
       </ScrollView>
 
       <AthleteFilterModal
@@ -724,44 +785,61 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
 
-  accordionBleed: {
-    marginHorizontal: -spacing.lg,
-    marginTop: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: D.rule,
-  },
-  accordions: { backgroundColor: palette.tinta },
-  accHead: {
+  /* Paginação ─────────────────────────────────────────────────────────────── */
+  // Sem borda própria: a última linha da lista já desenha a régua logo acima.
+  // Com `borderTopWidth` aqui saíam duas, separadas pelo respiro.
+  pagerFoot: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingTop: spacing.lg,
   },
-  accGreen: { backgroundColor: palette.gramado },
-  accCreme: { backgroundColor: palette.creme },
-  accTitle: {
-    fontFamily: fontFamily.displayBold,
-    fontSize: 18,
-    letterSpacing: -0.2,
-  },
-  accCount: { fontFamily: fontFamily.monoMedium, fontSize: 12 },
-  accBody: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: 2 },
-  accGreenBody: { backgroundColor: palette.gramado },
-  accCremeBody: { backgroundColor: palette.creme },
-  accEmpty: { paddingVertical: spacing.sm },
-  accRow: {
+  pagerBtn: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(251,250,245,0.15)",
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
   },
-  accName: { fontFamily: fontFamily.display, fontSize: 14, flex: 1 },
-  accMeta: {
+  pagerBtnOff: { opacity: 0.45 },
+  pagerBtnText: {
     fontFamily: fontFamily.monoMedium,
     fontSize: 10,
-    letterSpacing: 0.6,
+    letterSpacing: 1,
+  },
+  pagerLabel: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 11,
+    letterSpacing: 1,
+    fontVariant: ["tabular-nums"],
+  },
+
+  /* Filtros rápidos ───────────────────────────────────────────────────────── */
+  catRow: { flexDirection: "row", gap: spacing.xs, paddingRight: spacing.lg },
+  cat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: D.rule,
+    backgroundColor: D.elev,
+  },
+  catOn: {
+    backgroundColor: D.accent,
+    borderColor: D.accent,
+  },
+  catText: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  catCount: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 10,
+    fontVariant: ["tabular-nums"],
   },
 });

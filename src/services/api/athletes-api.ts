@@ -6,6 +6,8 @@ export interface ExploreParams {
   positions?: string[]; // short codes (e.g. "MCO")
   availability?: string; // FREE | EMPLOYED
   level?: string; // PROFESSIONAL | AMATEUR | YOUTH
+  /** ISO — só atletas cadastrados a partir desta data. */
+  createdAfter?: string;
   page?: number;
   limit?: number;
 }
@@ -24,6 +26,7 @@ function buildQuery(params: ExploreParams): string {
   if (params.positions?.length) q.set('positions', params.positions.join(','));
   if (params.availability) q.set('availability', params.availability);
   if (params.level) q.set('level', params.level);
+  if (params.createdAfter) q.set('createdAfter', params.createdAfter);
   q.set('page', String(params.page ?? 1));
   q.set('limit', String(params.limit ?? 30));
   return q.toString();
