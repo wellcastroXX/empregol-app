@@ -192,6 +192,24 @@ function UploadButton({
   );
 }
 
+/**
+ * Mensagem amigável para erros do seletor de mídia. O iOS falha ao exportar
+ * vídeos guardados no iCloud (não baixados no aparelho) com PHPhotosErrorDomain
+ * 3164 — nesse caso explicamos o que fazer em vez de mostrar o erro cru.
+ */
+function friendlyPickError(err: unknown, kind: "video" | "foto"): string {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  if (/PHPhotos|3164|iCloud|cloud/i.test(msg)) {
+    const alvo = kind === "video" ? "este vídeo" : "esta foto";
+    return (
+      `Não foi possível acessar ${alvo}. Provavelmente está no iCloud e ainda ` +
+      "não foi baixado no aparelho. Abra no app Fotos para baixar (ou desligue " +
+      "“Otimizar Armazenamento do iPhone” em Ajustes › Fotos) e tente de novo."
+    );
+  }
+  return msg || "Tente novamente.";
+}
+
 /** "Sobe a jogada" — publish a video, photo, or external link to the vitrine. */
 export function NovaMidiaScreen() {
   const router = useRouter();
@@ -323,8 +341,8 @@ export function NovaMidiaScreen() {
       }
     } catch (err) {
       Alert.alert(
-        "Não foi possível abrir a galeria",
-        err instanceof Error ? err.message : "Tente novamente.",
+        "Não foi possível usar a mídia",
+        friendlyPickError(err, tab === "video" ? "video" : "foto"),
       );
     }
   };
@@ -352,8 +370,8 @@ export function NovaMidiaScreen() {
       }
     } catch (err) {
       Alert.alert(
-        "Não foi possível abrir a câmera",
-        err instanceof Error ? err.message : "Tente novamente.",
+        "Não foi possível usar a câmera",
+        friendlyPickError(err, tab === "video" ? "video" : "foto"),
       );
     }
   };
